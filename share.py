@@ -602,10 +602,40 @@ h1 {
 #viewer-phantom { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; }
 .img-wrap { position: absolute; width:  var(--thumbnail-size); height: var(--thumbnail-size); display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 5px; box-shadow: 0 2px 6px var(--color-shadow); cursor: pointer; transition: transform 0.2s; transform: translateZ(0); }
 .img-item { width: 100%; height: 100%; object-fit: cover; }
-.modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; background-color: var(--color-overlay); justify-content: center; align-items: center; }
-.modal.show { display: flex; }
-.modal-content { max-width: 100%; max-height: 100%; object-fit: contain; }
-.close { position: absolute; top: 20px; right: 35px; color: var(--color-white); font-size: 40px; font-weight: bold; cursor: pointer; }
+.modal { 
+    display: none; 
+    position: fixed; 
+    z-index: 1001; 
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%; 
+    background-color: var(--color-overlay); 
+    /* 添加以下属性使内容居中 */
+    justify-content: center;
+    align-items: center;
+}
+.modal.show { 
+    display: flex; /* 修改为flex以启用居中布局 */
+}
+.modal-content { 
+    max-width: 100%; 
+    max-height: 100%; 
+    object-fit: contain;
+    /* 添加以下属性确保图片在容器内居中 */
+    margin: auto;
+    display: block;
+}
+.close { 
+    position: absolute; 
+    top: 20px; 
+    right: 35px; 
+    color: var(--color-white); 
+    font-size: 40px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    z-index: 1002; /* 提高z-index确保关闭按钮在图片上方 */
+}
 .close:hover { color: #ccc; }
 
 /* 媒体播放器样式 */
