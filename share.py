@@ -75,23 +75,24 @@ HTTP文件服务器 - 支持分页浏览、图片查看和媒体播放功能
   按Ctrl+C可停止服务器
 
 """
+
 __version__ = "0.4.3"
 __author__ = "Jackie Hank"
 __license__ = "MIT"
 
-import ssl
-import subprocess
-import platform
-import base64
 import argparse
+import base64
 import getpass
 import json
 import os
+import platform
 import socket
 import socketserver
+import ssl
+import subprocess
 import sys
-import time
 import threading
+import time
 from collections import OrderedDict
 from html import escape
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -104,32 +105,184 @@ CERT_FILE = os.path.join(SSL_DIR, "certificate.crt")
 KEY_FILE = os.path.join(SSL_DIR, "private.key")
 
 # 分页和缓存配置
-ITEMS_PER_PAGE = 100    # 每页显示的文件和目录数量
-CACHE_CAPACITY = 2000   # 缓存最大容量
-CACHE_TIMEOUT = 36000    # 缓存超时时间（秒）
+ITEMS_PER_PAGE = 100  # 每页显示的文件和目录数量
+CACHE_CAPACITY = 2000  # 缓存最大容量
+CACHE_TIMEOUT = 36000  # 缓存超时时间（秒）
 
 # 支持的文件扩展名
-IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.ico', 
-                    '.avif', '.jfif', '.pjpeg', '.pjp', '.heic', '.heif'}
-VIDEO_EXTENSIONS = {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv', '.m4v', '.3gp'}
-AUDIO_EXTENSIONS = {'.mp3', '.wav', '.ogg', '.m4a', '.flac'}
-TEXT_EXTENSIONS = {'.md', '.txt', '.py', '.json', '.xml', '.csv', '.c', '.cpp', '.h', '.java', 
-                   '.go', '.rs', '.js', '.css', '.sh', '.bat', '.log', '.yml', '.yaml', '.toml',
-                   '.asm', '.htm', '.php', '.rb', '.pl', '.pm', '.lua', '.sql', '.ini', '.conf',
-                   '.cfg', '.properties', '.tex', '.rst', '.asciidoc', '.adoc', '.ts', '.tsx',
-                   '.jsx', '.vue', '.sass', '.scss', '.less', '.styl', '.stylus', '.coffee',
-                   '.clj', '.cljs', '.cljc', '.edn', '.scala', '.kt', '.kts', '.dart', '.elm',
-                   '.erl', '.hrl', '.ex', '.exs', '.fs', '.fsx', '.fsi', '.ml', '.mli', '.hs',
-                   '.purs', '.v', '.sv', '.vhd', '.vhdl', '.tcl', '.awk', '.sed', '.nim', '.zig',
-                   '.odin', '.v', '.f', '.f90', '.f95', '.f03', '.f08', '.m', '.mm', '.r', '.rmd',
-                   '.swift', '.groovy', '.gradle', '.jsp', '.asp', '.aspx', '.jspx', '.cs', '.csx',
-                   '.vb', '.vbs', '.ps1', '.psm1', '.psd1', '.ps1xml', '.pssc', '.cdxml', '.xaml',
-                   '.axaml', '.resx', '.config', '.csproj', '.vbproj', '.fsproj', '.sln', '.suo', 
-                   '.gitignore', '.gitattributes', '.dockerfile', '.makefile', '.cmake', '.mk', 
-                   '.ipynb', '.markdown', '.mdown', '.mkd', '.mkdn', '.mkdown', '.mdwn', '.lock', 
-                   '.mod', '.sum', '.ini', '.cfg', '.conf', '.properties', '.lean'}
-COMMON_TEXT_FILES = {'readme', 'license', 'changelog', 'contributing', 'authors', 'makefile', 
-                     'dockerfile', }
+IMAGE_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".webp",
+    ".svg",
+    ".tiff",
+    ".ico",
+    ".avif",
+    ".jfif",
+    ".pjpeg",
+    ".pjp",
+    ".heic",
+    ".heif",
+}
+VIDEO_EXTENSIONS = {
+    ".mp4",
+    ".avi",
+    ".mov",
+    ".mkv",
+    ".webm",
+    ".flv",
+    ".wmv",
+    ".m4v",
+    ".3gp",
+}
+AUDIO_EXTENSIONS = {".mp3", ".wav", ".ogg", ".m4a", ".flac"}
+TEXT_EXTENSIONS = {
+    ".md",
+    ".txt",
+    ".py",
+    ".json",
+    ".xml",
+    ".csv",
+    ".c",
+    ".cpp",
+    ".h",
+    ".java",
+    ".go",
+    ".rs",
+    ".js",
+    ".css",
+    ".sh",
+    ".bat",
+    ".log",
+    ".yml",
+    ".yaml",
+    ".toml",
+    ".asm",
+    ".htm",
+    ".php",
+    ".rb",
+    ".pl",
+    ".pm",
+    ".lua",
+    ".sql",
+    ".ini",
+    ".conf",
+    ".cfg",
+    ".properties",
+    ".tex",
+    ".rst",
+    ".asciidoc",
+    ".adoc",
+    ".ts",
+    ".tsx",
+    ".jsx",
+    ".vue",
+    ".sass",
+    ".scss",
+    ".less",
+    ".styl",
+    ".stylus",
+    ".coffee",
+    ".clj",
+    ".cljs",
+    ".cljc",
+    ".edn",
+    ".scala",
+    ".kt",
+    ".kts",
+    ".dart",
+    ".elm",
+    ".erl",
+    ".hrl",
+    ".ex",
+    ".exs",
+    ".fs",
+    ".fsx",
+    ".fsi",
+    ".ml",
+    ".mli",
+    ".hs",
+    ".purs",
+    ".v",
+    ".sv",
+    ".vhd",
+    ".vhdl",
+    ".tcl",
+    ".awk",
+    ".sed",
+    ".nim",
+    ".zig",
+    ".odin",
+    ".v",
+    ".f",
+    ".f90",
+    ".f95",
+    ".f03",
+    ".f08",
+    ".m",
+    ".mm",
+    ".r",
+    ".rmd",
+    ".swift",
+    ".groovy",
+    ".gradle",
+    ".jsp",
+    ".asp",
+    ".aspx",
+    ".jspx",
+    ".cs",
+    ".csx",
+    ".vb",
+    ".vbs",
+    ".ps1",
+    ".psm1",
+    ".psd1",
+    ".ps1xml",
+    ".pssc",
+    ".cdxml",
+    ".xaml",
+    ".axaml",
+    ".resx",
+    ".config",
+    ".csproj",
+    ".vbproj",
+    ".fsproj",
+    ".sln",
+    ".suo",
+    ".gitignore",
+    ".gitattributes",
+    ".dockerfile",
+    ".makefile",
+    ".cmake",
+    ".mk",
+    ".ipynb",
+    ".markdown",
+    ".mdown",
+    ".mkd",
+    ".mkdn",
+    ".mkdown",
+    ".mdwn",
+    ".lock",
+    ".mod",
+    ".sum",
+    ".ini",
+    ".cfg",
+    ".conf",
+    ".properties",
+    ".lean",
+}
+COMMON_TEXT_FILES = {
+    "readme",
+    "license",
+    "changelog",
+    "contributing",
+    "authors",
+    "makefile",
+    "dockerfile",
+}
 
 CSS_STYLES = """
 :root {
@@ -663,12 +816,15 @@ h1 {
 }
 """
 
+
 class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     daemon_threads = True  # 自动回收线程
     allow_reuse_address = True  # 允许重用端口
 
+
 class ThreadedHTTPSServer(ThreadedHTTPServer):
     """支持HTTPS的线程化HTTP服务器"""
+
     def __init__(self, server_address, RequestHandlerClass, cert_file, key_file):
         super().__init__(server_address, RequestHandlerClass)
         self.cert_file = cert_file
@@ -676,10 +832,11 @@ class ThreadedHTTPSServer(ThreadedHTTPServer):
         self.context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         self.context.load_cert_chain(certfile=cert_file, keyfile=key_file)
         self.socket = self.context.wrap_socket(self.socket, server_side=True)
-    
+
+
 class LRUCache:
     """LRU缓存实现，支持超时和容量限制"""
-    
+
     def __init__(self, capacity=1000, timeout=300):  # 默认超时时间改为300秒
         self.capacity = capacity
         self.timeout = timeout
@@ -688,31 +845,31 @@ class LRUCache:
         self.hits = 0
         self.misses = 0
         self.evictions = 0
-        
+
     def get(self, key):
         """获取缓存项，如果存在且未超时则返回，否则返回None"""
         with self.lock:
             if key not in self.cache:
                 self.misses += 1
                 return None
-                
+
             value, timestamp = self.cache[key]
             # 检查是否超时
             if time.time() - timestamp > self.timeout:
                 del self.cache[key]
                 self.misses += 1
                 return None
-                
+
             # 移动到最近使用位置
             self.cache.move_to_end(key)
             self.hits += 1
             return value
-            
+
     def set(self, key, value):
         """设置缓存项"""
         with self.lock:
             current_time = time.time()
-            
+
             if key in self.cache:
                 # 更新现有项
                 self.cache[key] = (value, current_time)
@@ -722,39 +879,39 @@ class LRUCache:
                 if len(self.cache) >= self.capacity:
                     self.cache.popitem(last=False)
                     self.evictions += 1
-                    
+
                 self.cache[key] = (value, current_time)
-                
+
     def invalidate(self, key):
         """使指定键的缓存项失效"""
         with self.lock:
             if key in self.cache:
                 del self.cache[key]
-                
+
     def clear(self):
         """清空缓存"""
         with self.lock:
             self.cache.clear()
-            
+
     def stats(self):
         """获取缓存统计信息"""
         with self.lock:
             total = self.hits + self.misses
             hit_rate = self.hits / total if total > 0 else 0
             return {
-                'hits': self.hits,
-                'misses': self.misses,
-                'evictions': self.evictions,
-                'hit_rate': hit_rate,
-                'size': len(self.cache),
-                'capacity': self.capacity,
-                'timeout': self.timeout
+                "hits": self.hits,
+                "misses": self.misses,
+                "evictions": self.evictions,
+                "hit_rate": hit_rate,
+                "size": len(self.cache),
+                "capacity": self.capacity,
+                "timeout": self.timeout,
             }
 
 
 class FileServerHandler(SimpleHTTPRequestHandler):
     """自定义HTTP请求处理器，支持文件浏览和图片查看功能"""
-    
+
     # 使用类变量共享缓存实例
     cache = LRUCache(capacity=CACHE_CAPACITY, timeout=CACHE_TIMEOUT)
     password = None  # 初始密码为None
@@ -763,41 +920,57 @@ class FileServerHandler(SimpleHTTPRequestHandler):
         """检查HTTP基本认证"""
         if not self.password:
             return True  # 未设置密码，允许访问
-            
-        auth_header = self.headers.get('Authorization')
+
+        auth_header = self.headers.get("Authorization")
         if auth_header:
             # 解码认证信息
-            auth_type, auth_string = auth_header.split(' ', 1)
-            if auth_type.lower() == 'basic':
-                decoded = base64.b64decode(auth_string).decode('utf-8')
-                username, password = decoded.split(':', 1)
+            auth_type, auth_string = auth_header.split(" ", 1)
+            if auth_type.lower() == "basic":
+                decoded = base64.b64decode(auth_string).decode("utf-8")
+                username, password = decoded.split(":", 1)
                 if password == self.password:
                     return True
-                    
+
         # 认证失败，要求提供凭据
         self.send_response(401)
-        self.send_header('WWW-Authenticate', 'Basic realm="File Server"')
-        self.send_header('Content-type', 'text/html')
+        self.send_header("WWW-Authenticate", 'Basic realm="File Server"')
+        self.send_header("Content-type", "text/html")
         self.end_headers()
-        self.wfile.write(b'<html><body><h1>Authentication required</h1></body></html>')
+        self.wfile.write(b"<html><body><h1>Authentication required</h1></body></html>")
         return False
-    
+
     def list_directory(self, path):
         """列出目录内容并支持分页"""
         try:
             # 获取当前页码
             page = self._get_current_page()
-            
+
             # 获取当前页的文件和总页数
-            items, current_page_images, current_page_videos, current_page_audios, current_page_texts,total_pages = self._get_paginated_files(path, page)
-            
+            (
+                items,
+                current_page_images,
+                current_page_videos,
+                current_page_audios,
+                current_page_texts,
+                total_pages,
+            ) = self._get_paginated_files(path, page)
+
             # 生成HTML响应
-            html = self._generate_html_response(path, page, total_pages, items, current_page_images, current_page_videos, current_page_audios, current_page_texts)
-            
+            html = self._generate_html_response(
+                path,
+                page,
+                total_pages,
+                items,
+                current_page_images,
+                current_page_videos,
+                current_page_audios,
+                current_page_texts,
+            )
+
             # 发送响应
             self._send_html_response(html)
             return None
-            
+
         except OSError:
             self.send_error(404, "No permission to list directory")
             return None
@@ -825,14 +998,14 @@ class FileServerHandler(SimpleHTTPRequestHandler):
         """扫描目录，返回目录和文件列表"""
         dirs = []
         files = []
-        
+
         try:
             with os.scandir(base_path) as entries:
                 for entry in entries:
                     # 跳过隐藏文件
-                    if entry.name.startswith('.'):
+                    if entry.name.startswith("."):
                         continue
-                        
+
                     try:
                         if entry.is_dir():
                             dirs.append((entry.name, entry.name))
@@ -844,37 +1017,37 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                         continue
         except OSError:
             return [], []
-        
+
         # 排序
         dirs.sort()
         files.sort()
-        
+
         return dirs, files
 
     def _get_paginated_files(self, base_path, page):
         """获取当前页的文件列表，避免一次性处理所有文件"""
         # 获取缓存的目录和文件列表
         dirs, files = self._get_cached_dir_info(base_path)
-        
+
         # 合并目录和文件列表
         all_items = dirs + files
-        
+
         # 计算总页数
         total_items = len(all_items)
         total_pages = (total_items + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
-        
+
         # 获取当前页的项目
         start_idx = (page - 1) * ITEMS_PER_PAGE
         end_idx = start_idx + ITEMS_PER_PAGE
         current_page_items = all_items[start_idx:end_idx]
-        
+
         # 延迟获取文件大小和图片信息
         processed_items = []
         current_page_images = []
         current_page_videos = []
         current_page_audios = []
         current_page_texts = []
-        
+
         for item in current_page_items:
             if len(item) == 2:  # 是目录
                 processed_items.append(item)
@@ -886,217 +1059,271 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                     size = os.path.getsize(full_path)
                 except OSError:
                     size = 0
-                
+
                 processed_items.append((display_name, link_name, size))
-                
+
                 # 检查是否是图片、视频、音频、文本文件
                 ext = os.path.splitext(display_name)[1].lower()
                 encoded_name = quote(link_name)
                 if ext in IMAGE_EXTENSIONS:
-                    current_page_images.append({
-                        'name': display_name,
-                        'url': encoded_name
-                    })
+                    current_page_images.append(
+                        {"name": display_name, "url": encoded_name}
+                    )
                 elif ext in VIDEO_EXTENSIONS:
-                    current_page_videos.append({
-                        'name': display_name,
-                        'url': encoded_name,
-                        'size': size  # 新增：添加文件大小
-                    })
+                    current_page_videos.append(
+                        {
+                            "name": display_name,
+                            "url": encoded_name,
+                            "size": size,  # 新增：添加文件大小
+                        }
+                    )
                 elif ext in AUDIO_EXTENSIONS:
-                    current_page_audios.append({
-                        'name': display_name,
-                        'url': encoded_name,
-                        'size': size  # 新增：添加文件大小
-                    })
-                elif ext in TEXT_EXTENSIONS or (not ext and display_name.lower() in COMMON_TEXT_FILES):  # 新增：文本文件
-                    current_page_texts.append({
-                        'name': display_name,
-                        'url': encoded_name,
-                        'size': size
-                    })
-        
-        return processed_items, current_page_images, current_page_videos, current_page_audios, current_page_texts,total_pages
+                    current_page_audios.append(
+                        {
+                            "name": display_name,
+                            "url": encoded_name,
+                            "size": size,  # 新增：添加文件大小
+                        }
+                    )
+                elif ext in TEXT_EXTENSIONS or (
+                    not ext and display_name.lower() in COMMON_TEXT_FILES
+                ):  # 新增：文本文件
+                    current_page_texts.append(
+                        {"name": display_name, "url": encoded_name, "size": size}
+                    )
+
+        return (
+            processed_items,
+            current_page_images,
+            current_page_videos,
+            current_page_audios,
+            current_page_texts,
+            total_pages,
+        )
 
     def _get_current_page(self):
         """从查询参数获取当前页码"""
         query = urlparse(self.path).query
         params = parse_qs(query)
-        page_str = params.get('page', ['1'])[0]
-        
+        page_str = params.get("page", ["1"])[0]
+
         # 确保页码是有效的数字
         try:
             # 移除任何非数字字符（如意外的斜杠）
-            page_str = ''.join(filter(str.isdigit, page_str))
+            page_str = "".join(filter(str.isdigit, page_str))
             if not page_str:  # 如果过滤后为空字符串，使用默认值
-                page_str = '1'
+                page_str = "1"
             return int(page_str)
         except (ValueError, TypeError):
             return 1  # 如果转换失败，返回第一页
 
-    def _generate_html_response(self, path, page, total_pages, items, current_page_images, current_page_videos, current_page_audios, current_page_texts):
+    def _generate_html_response(
+        self,
+        path,
+        page,
+        total_pages,
+        items,
+        current_page_images,
+        current_page_videos,
+        current_page_audios,
+        current_page_texts,
+    ):
         """生成HTML响应内容"""
         decoded_path = unquote(self.path)
         # title = f"{escape(decoded_path)}"
         title = "share 文件夹"
-        
+
         html_parts = [
-            '<!DOCTYPE html>',
+            "<!DOCTYPE html>",
             '<html lang="zh-CN">',
-            '<head>',
+            "<head>",
             '<meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width, initial-scale=1">',
-            f'<title>{title}</title>',
-            f'<style>{CSS_STYLES}</style>',
-            '</head>',
-            '<body>',
+            f"<title>{title}</title>",
+            f"<style>{CSS_STYLES}</style>",
+            "</head>",
+            "<body>",
             '<div class="container">',
             '<div class="header">',
-            f'<h1>{title}</h1>'
+            f"<h1>{title}</h1>",
         ]
 
         html_parts.append('<div class="view-options">')
         html_parts.append(self._upload_file())
         # 如果有图片、视频、音频或文本，添加相应的按钮
         if current_page_images:
-            html_parts.append(f'<script>var imageData = {json.dumps(current_page_images)};</script>')
+            html_parts.append(
+                f"<script>var imageData = {json.dumps(current_page_images)};</script>"
+            )
             html_parts.append('<button class="view-btn" onclick="viewImages()">')
-            html_parts.append('<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">')
-            html_parts.append('<path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/>')
-            html_parts.append('</svg>')
-            html_parts.append('图片')
-            html_parts.append('</button>')
-            
+            html_parts.append(
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">'
+            )
+            html_parts.append(
+                '<path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/>'
+            )
+            html_parts.append("</svg>")
+            html_parts.append("图片")
+            html_parts.append("</button>")
+
         if current_page_videos:
-            html_parts.append(f'<script>var videoData = {json.dumps(current_page_videos)};</script>')
+            html_parts.append(
+                f"<script>var videoData = {json.dumps(current_page_videos)};</script>"
+            )
             html_parts.append('<button class="view-btn" onclick="viewVideos()">')
-            html_parts.append('<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">')
-            html_parts.append('<path d="M15 8v8H5V8h10m1-2H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4V7c0-.55-.45-1-1-1z"/>')
-            html_parts.append('</svg>')
-            html_parts.append('视频')
-            html_parts.append('</button>')
-            
+            html_parts.append(
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">'
+            )
+            html_parts.append(
+                '<path d="M15 8v8H5V8h10m1-2H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4V7c0-.55-.45-1-1-1z"/>'
+            )
+            html_parts.append("</svg>")
+            html_parts.append("视频")
+            html_parts.append("</button>")
+
         if current_page_audios:
-            html_parts.append(f'<script>var audioData = {json.dumps(current_page_audios)};</script>')
+            html_parts.append(
+                f"<script>var audioData = {json.dumps(current_page_audios)};</script>"
+            )
             html_parts.append('<button class="view-btn" onclick="viewAudios()">')
-            html_parts.append('<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">')
-            html_parts.append('<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>')
-            html_parts.append('</svg>')
-            html_parts.append('音频')
-            html_parts.append('</button>')
+            html_parts.append(
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">'
+            )
+            html_parts.append(
+                '<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>'
+            )
+            html_parts.append("</svg>")
+            html_parts.append("音频")
+            html_parts.append("</button>")
 
         if current_page_texts:
-            html_parts.append(f'<script>var textData = {json.dumps(current_page_texts)};</script>')
+            html_parts.append(
+                f"<script>var textData = {json.dumps(current_page_texts)};</script>"
+            )
             html_parts.append('<button class="view-btn" onclick="viewTexts()">')
-            html_parts.append('<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">')
-            html_parts.append('<path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>')
-            html_parts.append('</svg>')
-            html_parts.append('代码')
-            html_parts.append('</button>')
-                
-        html_parts.append('</div>')
-        html_parts.append('</div>')  # 关闭header
+            html_parts.append(
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">'
+            )
+            html_parts.append(
+                '<path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>'
+            )
+            html_parts.append("</svg>")
+            html_parts.append("代码")
+            html_parts.append("</button>")
+
+        html_parts.append("</div>")
+        html_parts.append("</div>")  # 关闭header
 
         html_parts.extend(self._generate_pagination_buttons(page, total_pages))
 
-        html_parts.extend([
-            '<table>',
-            '<thead><tr><th>名称</th><th>大小</th></tr></thead>',
-            '<tbody>'
-        ])
+        html_parts.extend(
+            ["<table>", "<thead><tr><th>名称</th><th>大小</th></tr></thead>", "<tbody>"]
+        )
 
         # 添加上级目录
         if self.path != "/":
-            html_parts.append('<tr><td colspan="3" class="filename-cell"><a href="../"> ..</a></td></tr>')
+            html_parts.append(
+                '<tr><td colspan="3" class="filename-cell"><a href="../"> ..</a></td></tr>'
+            )
 
         # 添加文件和目录列表
         html_parts.extend(self._generate_file_list(items))
 
-        html_parts.extend(['</tbody></table>'])
+        html_parts.extend(["</tbody></table>"])
 
         # 添加分页导航
         html_parts.extend(self._generate_pagination_buttons(page, total_pages))
 
         # 添加缓存统计信息（调试用）
-        if os.environ.get('DEBUG_CACHE'):
+        if os.environ.get("DEBUG_CACHE"):
             stats = self.cache.stats()
-            html_parts.append(f'<div style="margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px;">')
-            html_parts.append(f'<h3>缓存统计</h3>')
-            html_parts.append(f'<p>命中率: {stats["hit_rate"]*100:.1f}% ({stats["hits"]}/{stats["hits"]+stats["misses"]})</p>')
-            html_parts.append(f'<p>缓存大小: {stats["size"]}/{stats["capacity"]}</p>')
-            html_parts.append(f'<p>超时时间: {stats["timeout"]}秒</p>')
-            html_parts.append(f'<p>驱逐次数: {stats["evictions"]}</p>')
-            html_parts.append('</div>')
+            html_parts.append(
+                '<div style="margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px;">'
+            )
+            html_parts.append("<h3>缓存统计</h3>")
+            html_parts.append(
+                f"<p>命中率: {stats['hit_rate'] * 100:.1f}% ({stats['hits']}/{stats['hits'] + stats['misses']})</p>"
+            )
+            html_parts.append(f"<p>缓存大小: {stats['size']}/{stats['capacity']}</p>")
+            html_parts.append(f"<p>超时时间: {stats['timeout']}秒</p>")
+            html_parts.append(f"<p>驱逐次数: {stats['evictions']}</p>")
+            html_parts.append("</div>")
 
         # 添加图片查看器、媒体播放器和文本查看器的HTML和JavaScript
         html_parts.append(self._generate_image_viewer_html())
         html_parts.append(self._generate_media_player_html())
         html_parts.append(self._generate_text_viewer_html())
 
-        html_parts.append('</div>')  # 关闭container
-        html_parts.append('</body></html>')
-        
-        return ''.join(html_parts)
+        html_parts.append("</div>")  # 关闭container
+        html_parts.append("</body></html>")
+
+        return "".join(html_parts)
 
     def _generate_pagination_buttons(self, page, total_pages):
         """生成分页按钮，页数过多时简化显示"""
         buttons = ['<div class="pagination">']
-        
+
         # 获取当前路径并确保格式正确
         current_path = self._get_current_path()
-        
+
         # 上一页按钮
         if page > 1:
-            buttons.append(f'<a href="{current_path}?page={page - 1}">&laquo; 上一页</a>')
-        
+            buttons.append(
+                f'<a href="{current_path}?page={page - 1}">&laquo; 上一页</a>'
+            )
+
         # 确定要显示的页码范围
         max_visible_pages = 7  # 最多显示的页码数
         half_visible = max_visible_pages // 2
-        
+
         start_page = max(1, page - half_visible)
         end_page = min(total_pages, start_page + max_visible_pages - 1)
-        
+
         # 调整起始页码，确保显示足够多的页码
         if end_page - start_page + 1 < max_visible_pages:
             start_page = max(1, end_page - max_visible_pages + 1)
-        
+
         # 显示第一页和省略号（如果需要）
         if start_page > 1:
             buttons.append(f'<a href="{current_path}?page=1">1</a>')
             if start_page > 2:
                 buttons.append('<span class="ellipsis">...</span>')
-        
+
         # 显示页码
         for i in range(start_page, end_page + 1):
             if i == page:
-                buttons.append(f'<strong>{i}</strong>')
+                buttons.append(f"<strong>{i}</strong>")
             else:
                 buttons.append(f'<a href="{current_path}?page={i}">{i}</a>')
-        
+
         # 显示省略号和最后一页（如果需要）
         if end_page < total_pages:
             if end_page < total_pages - 1:
                 buttons.append('<span class="ellipsis">...</span>')
-            buttons.append(f'<a href="{current_path}?page={total_pages}">{total_pages}</a>')
-        
+            buttons.append(
+                f'<a href="{current_path}?page={total_pages}">{total_pages}</a>'
+            )
+
         # 下一页按钮
         if page < total_pages:
-            buttons.append(f'<a href="{current_path}?page={page + 1}">下一页 &raquo;</a>')
-        
-        buttons.append('</div>')
+            buttons.append(
+                f'<a href="{current_path}?page={page + 1}">下一页 &raquo;</a>'
+            )
+
+        buttons.append("</div>")
         return buttons
 
     def _get_current_path(self):
         """获取当前路径并确保格式正确"""
         parsed = urlparse(self.path)
         path = parsed.path
-        
+
         # 确保路径以斜杠结尾（如果是目录）
-        if not path.endswith('/'):
+        if not path.endswith("/"):
             # 检查这是否是一个目录请求
-            if not os.path.basename(path) or '.' not in os.path.basename(path):
-                path += '/'
-        
+            if not os.path.basename(path) or "." not in os.path.basename(path):
+                path += "/"
+
         return path
 
     def _generate_file_list(self, items):
@@ -1107,27 +1334,27 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 display_name, link_name = item
                 link = quote(link_name) + "/"
                 file_list_html.append(
-                    f'<tr>'
+                    f"<tr>"
                     f'<td class="filename-cell" data-label="名称" title="{escape(display_name)}"><a href="{link}"> {escape(display_name)}</a></td>'
                     # f'<td data-label="类型">目录</td>'
                     f'<td data-label="大小">-</td>'
-                    f'</tr>'
+                    f"</tr>"
                 )
             else:
                 display_name, link_name, size = item
                 link = quote(link_name)
                 size_str = self._format_size(size)
                 file_list_html.append(
-                    f'<tr>'
+                    f"<tr>"
                     f'<td class="filename-cell" data-label="名称" title="{escape(display_name)}"><a href="{link}"> {escape(display_name)}</a></td>'
                     # f'<td data-label="类型">文件</td>'
                     f'<td data-label="大小">{size_str}</td>'
-                    f'</tr>'
+                    f"</tr>"
                 )
         return file_list_html
-    
+
     def _upload_file(self):
-        return '''
+        return """
         <div class="upload-container">
             <button class="view-btn" onclick="openFileDialog()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -1270,11 +1497,11 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             }
         });
         </script>
-        '''
+        """
 
     def _generate_image_viewer_html(self):
         """生成图片查看器HTML和JavaScript"""
-        return '''
+        return """
         <div id="imageModal" class="modal">
             <span class="close" onclick="closeModal()">&times;</span>
             <img class="modal-content" id="expandedImg">
@@ -1588,11 +1815,11 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 }
             });
         </script>
-        '''
+        """
 
     def _generate_media_player_html(self):
         """生成媒体播放器HTML和JavaScript"""
-        return '''
+        return """
         <div id="mediaPlayer" class="media-player-container">
             <span class="media-close-btn" onclick="closeMediaPlayer()">&times;</span>
             <div class="media-player">
@@ -1881,11 +2108,11 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
         </script>
-        '''
-    
+        """
+
     def _generate_text_viewer_html(self):
         """生成文本查看器HTML和JavaScript"""
-        return '''
+        return """
         <div id="textViewer" class="text-viewer-container">
             <span class="text-close-btn" onclick="closeTextViewer()">&times;</span>
             <div class="text-viewer-header">
@@ -2368,11 +2595,11 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 });
             }
         </script>
-        '''
+        """
 
     def _send_html_response(self, html_content):
         """发送HTML响应"""
-        encoded = html_content.encode('utf-8')
+        encoded = html_content.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(encoded)))
@@ -2381,7 +2608,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
 
     def _format_size(self, size):
         """将字节转换为可读格式"""
-        for unit in ['B', 'KB', 'MB', 'GB']:
+        for unit in ["B", "KB", "MB", "GB"]:
             if size < 1024.0:
                 return f"{size:.1f} {unit}"
             size /= 1024.0
@@ -2393,46 +2620,46 @@ class FileServerHandler(SimpleHTTPRequestHandler):
         # 检查认证
         if not self.check_authentication():
             return
-        
+
         path = self.translate_path(self.path)
         _, ext = os.path.splitext(path)
-        
+
         # 处理文本文件
         if os.path.isfile(path) and ext.lower() in TEXT_EXTENSIONS:
             try:
                 # 首先以二进制模式读取文件内容
-                with open(path, 'rb') as f:
+                with open(path, "rb") as f:
                     raw_content = f.read()
-                
+
                 # 尝试一系列常见编码
                 encodings_to_try = [
-                    'utf-8',          # 最通用的编码
-                    'gbk',            # 中文Windows常用
-                    'big5',           # 繁体中文
-                    'shift_jis',      # 日文
-                    'euc-kr',         # 韩文
-                    'iso-8859-1',     # 西欧语言
-                    'cp1252',         # Windows西欧语言
-                    'utf-16',         # Unicode
-                    'utf-16le',       # Unicode小端序
-                    'utf-16be'        # Unicode大端序
+                    "utf-8",  # 最通用的编码
+                    "gbk",  # 中文Windows常用
+                    "big5",  # 繁体中文
+                    "shift_jis",  # 日文
+                    "euc-kr",  # 韩文
+                    "iso-8859-1",  # 西欧语言
+                    "cp1252",  # Windows西欧语言
+                    "utf-16",  # Unicode
+                    "utf-16le",  # Unicode小端序
+                    "utf-16be",  # Unicode大端序
                 ]
-                
+
                 content = None
-                
+
                 for encoding in encodings_to_try:
                     try:
                         content = raw_content.decode(encoding)
                         break
                     except UnicodeDecodeError:
                         continue
-                
+
                 # 如果所有编码都失败，使用替换错误处理
                 if content is None:
-                    content = raw_content.decode('utf-8', errors='replace')
-                
+                    content = raw_content.decode("utf-8", errors="replace")
+
                 # 将内容编码为UTF-8发送
-                content = content.encode('utf-8')
+                content = content.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-type", "text/plain; charset=utf-8")
                 self.send_header("Content-Length", str(len(content)))
@@ -2442,23 +2669,27 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             except Exception as e:
                 self.send_error(500, f"Error reading file: {e}")
                 return
-        
+
         # 处理视频文件的Range请求
-        if os.path.isfile(path) and ext.lower() in VIDEO_EXTENSIONS or ext.lower() in AUDIO_EXTENSIONS:
+        if (
+            os.path.isfile(path)
+            and ext.lower() in VIDEO_EXTENSIONS
+            or ext.lower() in AUDIO_EXTENSIONS
+        ):
             self._handle_video_request(path)
             return
-            
+
         # 处理缓存统计端点
-        if self.path == '/cache-stats':
+        if self.path == "/cache-stats":
             # 返回缓存统计信息
             stats = self.cache.stats()
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps(stats).encode('utf-8'))
+            self.wfile.write(json.dumps(stats).encode("utf-8"))
             return
-            
-        if self.path == '/cache-clear':
+
+        if self.path == "/cache-clear":
             # 清空缓存
             self.cache.clear()
             self.send_response(200)
@@ -2466,40 +2697,42 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"Cache cleared")
             return
-            
-        if self.path == '/cache-config':
+
+        if self.path == "/cache-config":
             # 配置缓存参数
             query = urlparse(self.path).query
             params = parse_qs(query)
-            
-            if 'timeout' in params:
+
+            if "timeout" in params:
                 try:
-                    new_timeout = int(params['timeout'][0])
+                    new_timeout = int(params["timeout"][0])
                     if new_timeout > 0:
                         self.cache.timeout = new_timeout
                 except ValueError:
                     pass
-                    
-            if 'capacity' in params:
+
+            if "capacity" in params:
                 try:
-                    new_capacity = int(params['capacity'][0])
+                    new_capacity = int(params["capacity"][0])
                     if new_capacity > 0:
                         self.cache.capacity = new_capacity
                 except ValueError:
                     pass
-                    
+
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps(self.cache.stats()).encode('utf-8'))
+            self.wfile.write(json.dumps(self.cache.stats()).encode("utf-8"))
             return
-            
+
         # 正常处理其他请求
         try:
             super().do_GET()
         except (BrokenPipeError, ConnectionResetError):
             # 客户端提前关闭连接
-            print(f"The client {self.client_address} terminated the connection prematurely.")
+            print(
+                f"The client {self.client_address} terminated the connection prematurely."
+            )
             return
         except Exception as e:
             # 其他异常，记录日志但不中断服务器
@@ -2508,14 +2741,16 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 self.send_error(500, f"Server error: {str(e)}")
             except (BrokenPipeError, ConnectionResetError):
                 # 即使在发送错误响应时客户端也断开了连接
-                print(f"The client {self.client_address} terminated the connection prematurely during error response.")
+                print(
+                    f"The client {self.client_address} terminated the connection prematurely during error response."
+                )
                 return
 
     def _handle_video_request(self, path):
         """处理视频文件的Range请求，支持分段加载（安全且高效）"""
         try:
             file_size = os.path.getsize(path)
-            range_header = self.headers.get('Range')
+            range_header = self.headers.get("Range")
             chunk_size = 1024 * 1024  # 1MB 分块
 
             if not range_header:
@@ -2527,7 +2762,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 self.end_headers()
 
                 try:
-                    with open(path, 'rb') as f:
+                    with open(path, "rb") as f:
                         # 关键：使用分块读取 + flush，确保 HTTPS 下可靠
                         while chunk := f.read(chunk_size):
                             self.wfile.write(chunk)
@@ -2556,7 +2791,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
 
             # 安全发送文件：分块读取 + flush
             try:
-                with open(path, 'rb') as f:
+                with open(path, "rb") as f:
                     f.seek(start)
                     remaining = content_length
                     while remaining > 0:
@@ -2578,20 +2813,20 @@ class FileServerHandler(SimpleHTTPRequestHandler):
 
     def _parse_range_header(self, range_header, file_size):
         """解析Range请求头，返回(start, end)元组"""
-        if not range_header.startswith('bytes='):
+        if not range_header.startswith("bytes="):
             return None
-            
-        ranges = range_header[6:].split(',')
+
+        ranges = range_header[6:].split(",")
         if len(ranges) != 1:
             # 只支持单个范围请求
             return None
-            
+
         range_str = ranges[0].strip()
-        if '-' not in range_str:
+        if "-" not in range_str:
             return None
-            
-        start_str, end_str = range_str.split('-', 1)
-        
+
+        start_str, end_str = range_str.split("-", 1)
+
         try:
             if not start_str and end_str:
                 # 格式: -500 (最后500字节)
@@ -2612,17 +2847,17 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 end = int(end_str)
                 if start >= file_size or end >= file_size or start > end:
                     return None
-                    
+
             return (start, end)
         except ValueError:
             return None
-        
+
     def do_POST(self):
         """处理POST请求，主要是文件上传"""
         # 检查认证
         if not self.check_authentication():
             return
-        
+
         parsed_path = urlparse(self.path)
         if parsed_path.path == "/upload":
             self.handle_file_upload(parsed_path)
@@ -2655,7 +2890,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 self.send_error(400, "No filename found")
                 return
             filename = disposition.split("filename=")[1].strip().strip('"')
-            
+
             # 安全处理文件名，防止路径遍历攻击
             filename = os.path.basename(filename)
             if not filename:
@@ -2663,22 +2898,26 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 return
 
             # 跳过 Content-Type 和空行
-            line = self.rfile.readline(); remain_bytes -= len(line)  # 修正：使用新读取的line
-            line = self.rfile.readline(); remain_bytes -= len(line)  # 修正：使用新读取的line
+            line = self.rfile.readline()
+            remain_bytes -= len(line)  # 修正：使用新读取的line
+            line = self.rfile.readline()
+            remain_bytes -= len(line)  # 修正：使用新读取的line
 
             # ⚡ 关键修正：把 URL 路径转为文件系统路径
             query = parse_qs(parsed_path.query)
             url_path = unquote(query.get("path", [""])[0])  # 例如 "Downloads/"
-            rel_path = url_path.lstrip("/")                # 变成 "Downloads"
-            target_dir = os.path.join(self.directory, rel_path) if rel_path else self.directory
-            
+            rel_path = url_path.lstrip("/")  # 变成 "Downloads"
+            target_dir = (
+                os.path.join(self.directory, rel_path) if rel_path else self.directory
+            )
+
             # 安全检查：确保目标目录在服务器目录内
             target_dir = os.path.abspath(target_dir)
             server_root = os.path.abspath(self.directory)
             if not target_dir.startswith(server_root):
                 self.send_error(403, "Access denied")
                 return
-                
+
             # 检查目标目录是否存在，不存在则创建
             if not os.path.exists(target_dir):
                 try:
@@ -2686,14 +2925,14 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 except OSError as e:
                     self.send_error(500, f"Failed to create directory: {str(e)}")
                     return
-            
+
             # 检查写入权限
             if not os.access(target_dir, os.W_OK):
                 self.send_error(403, "No write permission for this directory")
                 return
 
             save_path = os.path.join(target_dir, filename)
-            
+
             # 处理文件名冲突
             if os.path.exists(save_path):
                 # 分离文件名和扩展名
@@ -2715,9 +2954,9 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                         remain_bytes -= len(line)
                         if boundary in line:
                             # 移除行尾的CRLF或LF
-                            if prev_line.endswith(b'\r\n'):
+                            if prev_line.endswith(b"\r\n"):
                                 f.write(prev_line[:-2])
-                            elif prev_line.endswith(b'\n'):
+                            elif prev_line.endswith(b"\n"):
                                 f.write(prev_line[:-1])
                             else:
                                 f.write(prev_line)
@@ -2738,11 +2977,13 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "success", "filename": filename}).encode())
-            
+            self.wfile.write(
+                json.dumps({"status": "success", "filename": filename}).encode()
+            )
+
             # 使目录缓存失效，确保新文件立即显示
             self.cache.invalidate(target_dir)
-            
+
         except UnicodeDecodeError:
             self.send_error(400, "Invalid encoding in request headers")
             return
@@ -2753,7 +2994,6 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             self.send_error(500, f"Unexpected error: {str(e)}")
             return
 
-        
 
 def get_local_ip():
     """获取本机局域网IP地址"""
@@ -2776,6 +3016,7 @@ def validate_directory(path):
         raise ValueError(f"没有读取文件夹 '{path}' 的权限")
     return path
 
+
 def ensure_ssl_cert():
     """确保 SSL 证书存在，不存在则生成自签名证书"""
     os.makedirs(SSL_DIR, exist_ok=True)
@@ -2791,15 +3032,20 @@ def ensure_ssl_cert():
 
     # 检查 openssl 是否可用
     try:
-        subprocess.run(['openssl', 'version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(
+            ["openssl", "version"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         print("错误：未找到 openssl 命令。")
         print("请安装 OpenSSL：")
         system = platform.system().lower()
-        if system == 'windows':
+        if system == "windows":
             print("  - 推荐安装 Git for Windows（自带 openssl）")
             print("  - 或安装 Cygwin / WSL")
-        elif system == 'darwin':
+        elif system == "darwin":
             print("  - 使用 Homebrew: brew install openssl")
         else:  # Linux
             print("  - Ubuntu/Debian: sudo apt install openssl")
@@ -2810,24 +3056,34 @@ def ensure_ssl_cert():
     try:
         # 注意：Windows 上 shell=True 可能更兼容
         cmd = [
-            'openssl', 'req', '-x509', '-nodes', '-days', '365',
-            '-newkey', 'rsa:2048',
-            '-keyout', key,
-            '-out', cert,
-            '-subj', '/C=CN/O=Local Share/CN=localhost',
-            '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1'
+            "openssl",
+            "req",
+            "-x509",
+            "-nodes",
+            "-days",
+            "365",
+            "-newkey",
+            "rsa:2048",
+            "-keyout",
+            key,
+            "-out",
+            cert,
+            "-subj",
+            "/C=CN/O=Local Share/CN=localhost",
+            "-addext",
+            "subjectAltName=DNS:localhost,IP:127.0.0.1",
         ]
         # Windows 不支持 -addext？尝试不加
         try:
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError:
             print("警告：忽略 -addext 参数（可能系统不支持）")
-            cmd.remove('-addext')
-            cmd.remove('subjectAltName=DNS:localhost,IP:127.0.0.1')
+            cmd.remove("-addext")
+            cmd.remove("subjectAltName=DNS:localhost,IP:127.0.0.1")
             subprocess.run(cmd, check=True)
 
         # 设置权限（类 Unix）
-        if hasattr(os, 'chmod'):
+        if hasattr(os, "chmod"):
             os.chmod(key, 0o600)
             os.chmod(cert, 0o644)
 
@@ -2844,7 +3100,10 @@ def ensure_ssl_cert():
 
     return cert, key
 
-def serve_folder(folder, port=8000, host='0.0.0.0', password=None, cert_file=None, key_file=None):
+
+def serve_folder(
+    folder, port=8000, host="0.0.0.0", password=None, cert_file=None, key_file=None
+):
     """启动HTTP服务器提供文件夹服务"""
     try:
         # 设置密码
@@ -2852,29 +3111,37 @@ def serve_folder(folder, port=8000, host='0.0.0.0', password=None, cert_file=Non
 
         # 验证文件夹
         folder = validate_directory(folder)
-        
+
         # 切换到指定文件夹作为服务器根目录
         os.chdir(folder)
 
         # 选择协议http或https
         if cert_file and key_file:
             scheme = "https"
-            server = ThreadedHTTPSServer((host, port), FileServerHandler, cert_file, key_file)
+            server = ThreadedHTTPSServer(
+                (host, port), FileServerHandler, cert_file, key_file
+            )
         else:
             scheme = "http"
             server = ThreadedHTTPServer((host, port), FileServerHandler)
 
         # 在服务器 socket 上设置 TCP 优化选项
         sock = server.socket
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)    # 禁用Nagle算法，减少小包延迟
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 2 * 1024 * 1024)  # 2MB 发送缓冲区
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2 * 1024 * 1024)  # 2MB 接收缓冲区
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)    # 启用TCP Keepalive
+        sock.setsockopt(
+            socket.IPPROTO_TCP, socket.TCP_NODELAY, 1
+        )  # 禁用Nagle算法，减少小包延迟
+        sock.setsockopt(
+            socket.SOL_SOCKET, socket.SO_SNDBUF, 2 * 1024 * 1024
+        )  # 2MB 发送缓冲区
+        sock.setsockopt(
+            socket.SOL_SOCKET, socket.SO_RCVBUF, 2 * 1024 * 1024
+        )  # 2MB 接收缓冲区
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)  # 启用TCP Keepalive
 
         local_ip = get_local_ip()
 
         if password:
-            print(f"访问密码已设置")
+            print("访问密码已设置")
         print(f"正在共享文件夹: {os.getcwd()}")
         print(f"本地访问: {scheme}://localhost:{port}")
         print(f"局域网访问: {scheme}://{local_ip}:{port}")
@@ -2882,12 +3149,14 @@ def serve_folder(folder, port=8000, host='0.0.0.0', password=None, cert_file=Non
             print("使用自签名证书，浏览器将显示安全警告，请点击“高级” → “继续访问”")
         print(f"缓存统计: {scheme}://localhost:{port}/cache-stats")
         print(f"清空缓存: {scheme}://localhost:{port}/cache-clear")
-        print(f"配置缓存: {scheme}://localhost:{port}/cache-config?timeout={CACHE_TIMEOUT}&capacity={CACHE_CAPACITY}")
+        print(
+            f"配置缓存: {scheme}://localhost:{port}/cache-config?timeout={CACHE_TIMEOUT}&capacity={CACHE_CAPACITY}"
+        )
         print("按 Ctrl+C 停止服务器")
 
         # 启动服务器并保持运行e)
         server.serve_forever()
-        
+
     except (ValueError, PermissionError) as e:
         print(f"错误: {e}")
     except KeyboardInterrupt:
@@ -2898,27 +3167,47 @@ def serve_folder(folder, port=8000, host='0.0.0.0', password=None, cert_file=Non
 
 def main():
     """主函数，解析命令行参数并启动服务器"""
-    parser = argparse.ArgumentParser(description='启动一个简单的HTTP服务器提供本地文件夹服务')
-    parser.add_argument('folder', help='要提供服务的文件夹路径')
-    parser.add_argument('--password', action='store_true', help='启用密码并提示输入')
-    parser.add_argument('--https', action='store_true',
-                       help='启用 HTTPS（自动生成自签名证书）')
-    parser.add_argument('--cert', type=str, default=None,
-                       help='HTTPS 证书文件路径（.crt 或 .pem）')
-    parser.add_argument('--key', type=str, default=None,
-                       help='HTTPS 私钥文件路径（.key）')
-    parser.add_argument('-p', '--port', type=int, default=8000,
-                       help='服务器端口 (默认: 8000)')
-    parser.add_argument('--host', default='0.0.0.0',
-                       help='服务器监听地址 (默认: 0.0.0.0 - 所有接口)')
-    parser.add_argument('--debug-cache', action='store_true',
-                       help='在页面底部显示缓存统计信息')
-    parser.add_argument('--cache-timeout', type=int, default=CACHE_TIMEOUT,
-                       help=f'缓存超时时间（秒）(默认: {CACHE_TIMEOUT})')
-    parser.add_argument('--cache-capacity', type=int, default=CACHE_CAPACITY,
-                       help=f'缓存最大容量 (默认: {CACHE_CAPACITY})')
-    parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}',
-                       help='显示版本信息并退出')
+    parser = argparse.ArgumentParser(
+        description="启动一个简单的HTTP服务器提供本地文件夹服务"
+    )
+    parser.add_argument("folder", help="要提供服务的文件夹路径")
+    parser.add_argument("--password", action="store_true", help="启用密码并提示输入")
+    parser.add_argument(
+        "--https", action="store_true", help="启用 HTTPS（自动生成自签名证书）"
+    )
+    parser.add_argument(
+        "--cert", type=str, default=None, help="HTTPS 证书文件路径（.crt 或 .pem）"
+    )
+    parser.add_argument(
+        "--key", type=str, default=None, help="HTTPS 私钥文件路径（.key）"
+    )
+    parser.add_argument(
+        "-p", "--port", type=int, default=8000, help="服务器端口 (默认: 8000)"
+    )
+    parser.add_argument(
+        "--host", default="0.0.0.0", help="服务器监听地址 (默认: 0.0.0.0 - 所有接口)"
+    )
+    parser.add_argument(
+        "--debug-cache", action="store_true", help="在页面底部显示缓存统计信息"
+    )
+    parser.add_argument(
+        "--cache-timeout",
+        type=int,
+        default=CACHE_TIMEOUT,
+        help=f"缓存超时时间（秒）(默认: {CACHE_TIMEOUT})",
+    )
+    parser.add_argument(
+        "--cache-capacity",
+        type=int,
+        default=CACHE_CAPACITY,
+        help=f"缓存最大容量 (默认: {CACHE_CAPACITY})",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="显示版本信息并退出",
+    )
 
     args = parser.parse_args()
 
@@ -2945,7 +3234,7 @@ def main():
 
     # 设置环境变量以启用缓存调试
     if args.debug_cache:
-        os.environ['DEBUG_CACHE'] = '1'
+        os.environ["DEBUG_CACHE"] = "1"
 
     # 配置缓存参数
     FileServerHandler.cache.timeout = args.cache_timeout
@@ -2958,7 +3247,7 @@ def main():
         args.host,
         password,
         cert_file=cert_file if args.https else None,
-        key_file=key_file if args.https else None
+        key_file=key_file if args.https else None,
     )
 
 
