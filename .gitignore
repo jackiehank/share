@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual Environment (uv, venv, conda, etc.)
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# uv lock file is COMMITTED, but local cache is ignored
+.uv/
+
+# Local environment files
+.env
+.envrc
+.python-version
