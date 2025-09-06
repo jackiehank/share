@@ -30,6 +30,7 @@ jobs:
       - name: Install the project
         run: uv sync --all-groups --dev
 
+
       - name: Run tests with pytest
         run: |
           python -m pytest tests/ -v
