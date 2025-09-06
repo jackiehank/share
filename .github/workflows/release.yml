@@ -2,7 +2,7 @@ name: Release and Publish
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch: # 允许手动触发
 
 jobs:
@@ -14,22 +14,22 @@ jobs:
         python-version: ["3.11", "3.12"]
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install .[dev]  # 安装主包和开发依赖
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev]  # 安装主包和开发依赖
 
-    - name: Run tests with pytest
-      run: |
-        python -m pytest tests/ -v
+      - name: Run tests with pytest
+        run: |
+          python -m pytest tests/ -v
 
   release:
     needs: test  # 确保测试通过后才运行发布
@@ -37,26 +37,26 @@ jobs:
     if: success()  # 只在测试成功时运行
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Extract version from pyproject.toml
-      id: get-version
-      run: |
-        VERSION=$(grep -E '^version =' pyproject.toml | cut -d '"' -f2)
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Extract version from pyproject.toml
+        id: get-version
+        run: |
+          VERSION=$(grep -E '^version =' pyproject.toml | cut -d '"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ steps.get-version.outputs.version }}
-        name: Release v${{ steps.get-version.outputs.version }}
-        body: |
-          Automated release for version ${{ steps.get-version.outputs.version }}
-          
-          Changes in this version:
-          - TODO: Add changelog here
-        files: share.py
-        generate_release_notes: true  # 自动生成基于PR的发布说明
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get-version.outputs.version }}
+          name: Release v${{ steps.get-version.outputs.version }}
+          body: |
+            Automated release for version ${{ steps.get-version.outputs.version }}
+            
+            Changes in this version:
+            - TODO: Add changelog here
+          files: share.py
+          generate_release_notes: true  # 自动生成基于PR的发布说明
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
