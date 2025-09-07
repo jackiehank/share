@@ -25,3 +25,7 @@ Thumbs.db
 .env
 .envrc
 .python-version
+
+# build files
+build/
+share.egg-info/
