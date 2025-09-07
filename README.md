@@ -20,7 +20,7 @@ python3 share.py /path/to/your/folder
 ### ✅ 单文件，极致简洁
 - **一个文件就是全部**：整个项目就是一个 `share.py` 脚本，没有复杂的目录结构。
 - **零依赖**：仅依赖 Python 标准库，只要有 Python 环境，随时随地都能运行。
-- **一键部署**：下载脚本，双击或命令行运行，3 秒完成部署。
+- **一键部署**：下载脚本，命令行运行，3 秒完成部署。
 
 ### 🔐 安全优先的设计理念
 我深知数据安全的重要性。`share` 的设计哲学是：**在提供便利的同时，最大限度地降低风险**。
@@ -48,78 +48,62 @@ python3 share.py /path/to/your/folder
 
 ## 🚀 快速开始
 
-### 1. 获取脚本
+### 📦 安装与部署
+
+> **告别手动下载脚本！现在，你可以通过标准的 Python 包管理器一键安装 `share`。**
+
+`share` 已被打包为标准的 Python wheel 文件（`.whl`），你可以从 GitHub Release 页面下载并安装，享受更稳定、更便捷的体验。
+
+#### 1: 下载安装包
+
+1.  访问项目的 [Releases 页面](https://github.com/jackiehank/share/releases)。
+2.  在最新的版本（如 `v0.4.3`）下，找到 **Assets** 部分。
+3.  下载文件 `share-0.4.3-py3-none-any.whl`。
+
+#### 2: 安装
+
+你有两种推荐的安装方式：
+
+**方式一：使用 `pipx` 安装（强烈推荐）**
+
+`pipx` 是专为安装 Python 命令行工具设计的工具，它会为 `share` 创建一个独立的虚拟环境，避免污染你的主 Python 环境。
 
 ```bash
-# 下载单个文件
-curl -O https://raw.githubusercontent.com/jackiehank/share/main/share.py
+# 安装 pipx (如果尚未安装)
+pip install pipx
+pipx ensurepath
+
+# 使用 pipx 安装 share
+pipx install ./share-0.4.3-py3-none-any.whl
 ```
 
-### 2. 一键部署 (推荐)
+**方式二：使用 `pip` 安装**
 
-为了让使用更加便捷，您可以创建一个启动脚本，使其像一个系统命令一样工作。
-
-#### 在 Linux/macOS 上
-
-1.  将脚本重命名为 `share` (去掉 `.py` 后缀)。
-2.  添加可执行权限。
-3.  （可选）将其移动到 `PATH` 中的目录，如 `~/bin`。
+如果你不想使用 `pipx`，也可以直接用 `pip` 安装：
 
 ```bash
-# 1. 重命名并赋予可执行权限
-mv share.py share
-chmod +x share
-
-# 2. 移动到用户.local/bin目录（如果存在）
-mkdir -p ~/.local/bin
-mv share ~/.local/bin/
-
-# 3. 确保 ~/.local/bin 在你的 PATH 环境变量中
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+pip install --user ./share-0.4.3-py3-none-any.whl
 ```
 
-之后，您就可以在任何地方直接使用 `share` 命令了：
-```bash
-share ~/Downloads --password
-```
+#### 3: 开始使用！
 
-#### 在 Windows 上
-
-1.  使用 `share.bat` 批处理文件，与 `share` 脚本放在同一目录。
-
-**`share.bat` 文件内容：**
-```batch
-@echo off
-python "%~dp0share.py" %*
-```
-
-这个批处理文件会调用当前目录下的 `share` 脚本，并将所有参数传递给它。
-
-之后，您就可以在命令提示符或 PowerShell 中，进入脚本所在目录，然后直接运行：
-```cmd
-share C:\Users\YourName\Pictures --https
-```
-
-### 3. 手动运行
-
-您也可以直接使用 Python 运行：
+安装完成后，你就可以在终端的任何位置使用 `share` 命令了！
 
 ```bash
 # 共享当前目录
-python3 share.py .
+share .
 
-# 共享指定文件夹
-python3 share.py /path/to/your/folder -p 8080
+# 共享指定文件夹、指定端口
+share /path/to/your/folder -p 8080
 
 # 启用密码保护
-python3 share.py ~/Documents --password
+share ~/Documents --password
 
-# 启用HTTPS加密
-python3 share.py ~/Pictures --https
+# 启用HTTPS加密(依赖 openssl，不启用则无需安装)
+share ~/Pictures --https
 ```
 
-### 4. 访问共享
+#### 4. 访问共享
 
 服务器启动后，会显示访问地址，例如：
 ```
@@ -143,92 +127,6 @@ usage: share [-h] [--password] [--https] [--cert CERT] [--key KEY] [-p PORT] [--
   -p PORT, --port PORT  服务器端口 (默认: 8000)
   --host HOST           监听地址 (默认: 0.0.0.0)
 ```
-
-## 📂 项目结构
-
-```bash
-share/
-├── share.py      # 核心脚本，单文件，开箱即用
-├── share.bat     # Windows 系统启动脚本
-├── README.md     # 本文件
-└── LICENSE       # MIT 许可证
-```
-
-## 🔧 配置说明
-
-`share` 提供了灵活的配置选项，您可以通过修改脚本开头的常量定义来自定义服务器的行为，而无需修改核心代码。
-
-### SSL 配置
-
-```python
-SSL_DIR = os.path.expanduser("~/.config/share/ssl")  # SSL证书存储目录
-CERT_FILE = os.path.join(SSL_DIR, "certificate.crt")  # 证书文件路径
-KEY_FILE = os.path.join(SSL_DIR, "private.key")       # 私钥文件路径
-```
-
-**修改建议**：
-- 可以更改 `SSL_DIR` 来指定自定义的证书存储位置
-- 如果已有证书和私钥，可以直接修改 `CERT_FILE` 和 `KEY_FILE` 路径指向现有文件
-
-### 分页和缓存配置
-
-```python
-ITEMS_PER_PAGE = 100    # 每页显示的文件和目录数量
-CACHE_CAPACITY = 2000   # 缓存最大容量（项目数）
-CACHE_TIMEOUT = 36000   # 缓存超时时间（秒），默认10小时
-```
-
-**修改建议**：
-- 对于包含大量文件的目录，可以适当增加 `ITEMS_PER_PAGE` 值（但可能影响加载性能）
-- 在内存受限的环境中，可以减小 `CACHE_CAPACITY`
-- 对于频繁变动的目录，可以减小 `CACHE_TIMEOUT` 以确保内容及时更新
-
-### 文件类型支持配置
-
-脚本预定义了多种文件类型的扩展名，您可以根据需要添加或删除：
-
-### 图片格式
-```python
-IMAGE_EXTENSIONS = {...}
-```
-
-### 视频格式
-```python
-VIDEO_EXTENSIONS = {...}
-```
-
-### 音频格式
-```python
-AUDIO_EXTENSIONS = {...}
-```
-
-### 文本/代码格式
-```python
-TEXT_EXTENSIONS = {...}
-```
-
-### 常见文本文件名称（无扩展名）
-```python
-COMMON_TEXT_FILES = {...}
-```
-
-**修改建议**：
-- 根据您的需求添加或删除特定的文件扩展名
-- 对于图片、视频、音频，只要点击文件链接可以使用浏览器查看的格式，都可以添加
-- 添加新格式后，相应的文件将获得特殊的查看/播放界面
-- 对于文本格式，都可以添加到`TEXT_EXTENSIONS`
-
-## 应用配置更改
-
-修改这些常量后，只需重启 `share` 服务器即可应用更改：
-
-```bash
-# 停止当前服务器 (Ctrl+C)
-# 重新启动
-python share.py /path/to/folder
-```
-
-这些配置选项使您能够精细调整服务器行为，而无需理解或修改复杂的内部逻辑。
 
 ## 🤝 贡献
 

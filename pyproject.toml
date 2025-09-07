@@ -14,15 +14,12 @@ dependencies = []
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.build.targets.wheel]
-packages = ["."]
-
 [project.optional-dependencies]
 dev = [
     "pytest>=8.4.2",
     "requests>=2.32.5",
     "ruff>=0.12.12",
 ]
+
+[project.scripts]
+share = "share:main"
