@@ -7,6 +7,9 @@
 
 ```bash
 # 1. 下载脚本
+# 国内用户使用 gitee
+wget https://gitee.com/jackiehankk/share/blob/main/share.py
+
 wget https://github.com/jackiehank/share/raw/main/share.py
 
 # 2. 一键运行！
@@ -77,9 +80,9 @@ python3 share.py /path/to/your/folder
 
 #### 1: 下载安装包
 
-1.  访问项目的 [Releases 页面](https://github.com/jackiehank/share/releases)。
+1.  访问项目的 [gitee Release 页面](https://gitee.com/jackiehankk/share/releases) [github Releases 页面](https://github.com/jackiehank/share/releases)。
 2.  在最新的版本（如 `v0.4.3`）下，找到 **Assets** 部分。
-3.  下载文件 `share-0.4.3-py3-none-any.whl`。
+3.  下载文件 `share-xxx-py3-none-any.whl`。
 
 #### 2: 安装
 
