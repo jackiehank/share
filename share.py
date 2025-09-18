@@ -2474,11 +2474,21 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                     overflow: auto;
                     padding: 20px;
                     -webkit-overflow-scrolling: touch;
+                    box-sizing: border-box;
+                    width: 100%;
+                    max-width: 800px;   /* 限制最大宽度 */
+                    margin: 0 auto;     /* 自动居中 */
                 }
                 @media (max-width: 600px) {
                         .text-viewer-content {
                         padding: 10px;
                     }
+                }
+
+                .text-viewer-content pre {
+                    white-space: pre-wrap;     /* 允许换行 */
+                    word-break: break-all;     /* 强制断词，防止超长单词溢出 */
+                    margin: 0;
                 }
 
                 .text-viewer-content .hljs {
