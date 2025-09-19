@@ -1,6 +1,6 @@
 [project]
-name = "share"
-version = "0.4.4"
+name = "share-cli"
+version = "0.4.5"
 description = "A simple file server"
 readme = "README.md"
 authors = [{ name = "Jackie Han", email = "jackiehank@163.com" }]
