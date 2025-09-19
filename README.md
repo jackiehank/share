@@ -81,7 +81,7 @@ python3 share.py /path/to/your/folder
 #### 1: 下载安装包
 
 1.  访问项目的 [gitee Release 页面](https://gitee.com/jackiehankk/share/releases) [github Releases 页面](https://github.com/jackiehank/share/releases)。
-2.  在最新的版本（如 `v0.4.3`）下，找到 **Assets** 部分。
+2.  在最新的版本（如 `v0.4.4`）下，找到 **Assets** 部分。
 3.  下载文件 `share-xxx-py3-none-any.whl`。
 
 #### 2: 安装
@@ -98,7 +98,7 @@ pip install pipx
 pipx ensurepath
 
 # 使用 pipx 安装 share
-pipx install ./share-0.4.3-py3-none-any.whl
+pipx install ./share-0.4.4-py3-none-any.whl
 ```
 
 **方式二：使用 `pip` 安装**
@@ -106,7 +106,7 @@ pipx install ./share-0.4.3-py3-none-any.whl
 如果你不想使用 `pipx`，也可以直接用 `pip` 安装：
 
 ```bash
-pip install --user ./share-0.4.3-py3-none-any.whl
+pip install --user ./share-0.4.4-py3-none-any.whl
 ```
 
 `Android` 使用 `termux` 安装 `python` 后也同样可以使用`pip`安装使用。
