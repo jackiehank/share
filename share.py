@@ -76,7 +76,7 @@ HTTP文件服务器 - 支持分页浏览、图片查看和媒体播放功能
 
 """
 
-__version__ = "0.4.4"
+__version__ = "0.4.5"
 __author__ = "Jackie Hank"
 __license__ = "MIT"
 

@@ -28,4 +28,4 @@ Thumbs.db
 
 # build files
 build/
-share.egg-info/
+*.egg-info/

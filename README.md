@@ -1,19 +1,16 @@
-# `share` - 一键部署的单文件安全文件共享
+# `share-cli` - 一键部署的单文件安全文件共享
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-**`share` 是一个极致简单的单文件 HTTP 服务器。** 只需一个 Python 脚本，即可在局域网内快速、安全地共享您的文件夹。
+**`share-cli` 是一个极致简单的单文件 HTTP 服务器。** 只需一个 Python 脚本，即可在局域网内快速、安全地共享您的文件夹。
 
 ```bash
-# 1. 下载脚本
-# 国内用户使用 gitee
-wget https://gitee.com/jackiehankk/share/blob/main/share.py
+# 使用 pipx 安装（强烈推荐）
+pipx install share-cli
 
-wget https://github.com/jackiehank/share/raw/main/share.py
-
-# 2. 一键运行！
-python3 share.py /path/to/your/folder
+# 或使用 pip 安装
+pip install --user share-cli
 ```
 
 无需安装依赖，无需复杂配置。打开浏览器，即刻开始浏览、上传和播放您的文件。
@@ -76,15 +73,9 @@ python3 share.py /path/to/your/folder
 
 > **告别手动下载脚本！现在，你可以通过标准的 Python 包管理器一键安装 `share`。**
 
-`share` 已被打包为标准的 Python wheel 文件（`.whl`），你可以从 GitHub Release 页面下载并安装，享受更稳定、更便捷的体验。
+#### 1: 安装 `share-cli` 命令行工具
 
-#### 1: 下载安装包
-
-1.  访问项目的 [gitee Release 页面](https://gitee.com/jackiehankk/share/releases) [github Releases 页面](https://github.com/jackiehank/share/releases)。
-2.  在最新的版本（如 `v0.4.4`）下，找到 **Assets** 部分。
-3.  下载文件 `share-xxx-py3-none-any.whl`。
-
-#### 2: 安装
+> **推荐通过 PyPI 一键安装，无需手动下载文件。**
 
 你有两种推荐的安装方式：
 
@@ -97,8 +88,8 @@ python3 share.py /path/to/your/folder
 pip install pipx
 pipx ensurepath
 
-# 使用 pipx 安装 share
-pipx install ./share-0.4.4-py3-none-any.whl
+# 使用 pipx 从 PyPI 安装 share
+pipx install share-cli
 ```
 
 **方式二：使用 `pip` 安装**
@@ -106,12 +97,33 @@ pipx install ./share-0.4.4-py3-none-any.whl
 如果你不想使用 `pipx`，也可以直接用 `pip` 安装：
 
 ```bash
-pip install --user ./share-0.4.4-py3-none-any.whl
+pip install --user share-cli
 ```
 
-`Android` 使用 `termux` 安装 `python` 后也同样可以使用`pip`安装使用。
+> ✅ **安装完成后，即可在终端任何位置使用 `share` 命令！**
+>
+> `Android` 用户使用 `termux` 安装 `python` 后，同样可以使用上述 `pip` 命令进行安装。
 
-#### 3: 开始使用！
+---
+
+#### （可选）手动下载安装包
+
+如果你想手动下载 wheel 文件进行安装：
+
+1.  访问项目的 [Gitee Release 页面](https://gitee.com/jackiehankk/share/releases) 或 [GitHub Releases 页面](https://github.com/jackiehank/share/releases)。
+2.  在最新的版本（如 `v0.4.5`）下，找到 **Assets** 部分。
+3.  下载文件 `share_cli-0.4.5-py3-none-any.whl`。
+4.  使用 `pipx` 或 `pip` 安装下载的文件：
+
+```bash
+# 使用 pipx
+pipx install ./share_cli-0.4.5-py3-none-any.whl
+
+# 或使用 pip
+pip install --user ./share_cli-0.4.5-py3-none-any.whl
+```
+
+#### 2: 开始使用！
 
 安装完成后，你就可以在终端的任何位置使用 `share` 命令了！
 
@@ -129,7 +141,7 @@ share ~/Documents --password
 share ~/Pictures --https
 ```
 
-#### 4. 访问共享
+#### 3. 访问共享
 
 服务器启动后，会显示访问地址，例如：
 ```
