@@ -844,6 +844,222 @@ h1 {
     cursor: pointer;
     z-index: 1001;
 }
+
+/* 文本查看器样式 */
+.text-viewer-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--color-white);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+}
+
+.text-viewer-container.show {
+    display: flex;
+}
+
+.text-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: var(--color-black);
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.text-viewer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    padding-right: 60px; /* 为关闭按钮留出空间 */
+    border-bottom: 1px solid var(--color-gray-200);
+    background: var(--color-white);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.text-viewer-header h2 {
+    margin: 0;
+    color: var(--color-gray-900);
+    font-size: 1.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%;
+}
+
+.text-viewer-options {
+    display: flex;
+    gap: 10px;
+}
+
+.text-viewer-btn {
+    padding: 8px 16px;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-300);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--color-gray-700);
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.text-viewer-btn:hover {
+    background: var(--color-gray-200);
+}
+
+/* 关键修复：使用绝对定位而不是flex布局 */
+.text-viewer-content-container {
+    position: absolute;
+    top: 81px; /* 头部高度 */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+.text-viewer-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: auto;
+    padding: 20px;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 800px;   /* 限制最大宽度 */
+    margin: 0 auto;     /* 自动居中 */
+}
+@media (max-width: 600px) {
+        .text-viewer-content {
+        padding: 10px;
+    }
+}
+
+.text-viewer-content pre {
+    white-space: pre-wrap;     /* 允许换行 */
+    word-break: break-all;     /* 强制断词，防止超长单词溢出 */
+    margin: 0;
+}
+
+.text-viewer-content .hljs {
+    padding: 0 !important;
+}
+
+/* 文本文件列表样式 */
+.text-playlist {
+    position: absolute;
+    top: 81px; /* 头部高度 */
+    right: 20px;
+    width: 300px;
+    max-height: calc(100% - 101px); /* 头部高度 + 底部边距 */
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-300);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1002;
+    overflow-y: auto;
+    display: none;
+}
+
+.text-playlist.show {
+    display: block;
+}
+
+.text-playlist-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--color-gray-200);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.text-playlist-item:hover {
+    background: var(--color-gray-50);
+}
+
+.text-playlist-item.active {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+/* 针对Edge的特殊修复 */
+@supports (-ms-ime-align:auto) {
+    .text-viewer-content {
+        overflow-y: scroll; /* 强制显示滚动条 */
+        -ms-overflow-style: auto;
+    }
+}
+
+/* 针对Chromium Edge的特殊修复 */
+@supports (selector(:focus-visible)) {
+    .text-viewer-content {
+        overflow: auto;
+    }
+}
+
+.text-viewer-content pre {
+    margin: 0;
+    padding: 0;
+    background: transparent !important;
+}
+
+.text-viewer-content code {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    display: block;
+    white-space: pre;
+    overflow-x: auto;
+}
+
+/* 滚动条样式 - 确保在所有浏览器中一致 */
+.text-viewer-content::-webkit-scrollbar {
+    width: 12px;
+}
+
+.text-viewer-content::-webkit-scrollbar-track {
+    background: var(--color-gray-100);
+    border-radius: 6px;
+}
+
+.text-viewer-content::-webkit-scrollbar-thumb {
+    background: var(--color-gray-400);
+    border-radius: 6px;
+    border: 3px solid var(--color-white);
+}
+
+.text-viewer-content::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-500);
+}
+
+/* Firefox 滚动条样式 */
+.text-viewer-content {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gray-400) var(--color-gray-100);
+}
+
+/* Edge滚动条样式 */
+.text-viewer-content {
+    -ms-overflow-style: auto;
+}
+
+/* 确保代码高亮区域可以滚动 */
+.hljs {
+    overflow: visible !important;
+    display: block;
+}
 """
 
 
@@ -1160,8 +1376,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
     ):
         """生成HTML响应内容"""
         decoded_path = unquote(self.path)
-        # title = f"{escape(decoded_path)}"
-        title = "share 文件夹"
+        title = f"{escape(decoded_path)}"
 
         html_parts = [
             "<!DOCTYPE html>",
@@ -1175,7 +1390,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             "<body>",
             '<div class="container">',
             '<div class="header">',
-            f"<h1>{title}</h1>",
+            "<h1>share 文件夹</h1>",
         ]
 
         html_parts.append('<div class="view-options">')
@@ -1280,6 +1495,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             html_parts.append("</div>")
 
         # 添加图片查看器、媒体播放器和文本查看器的HTML和JavaScript
+        html_parts.append(self._generate_common_js())  # 公共JS
         html_parts.append(self._generate_image_viewer_html())
         html_parts.append(self._generate_media_player_html())
         html_parts.append(self._generate_text_viewer_html())
@@ -1288,6 +1504,15 @@ class FileServerHandler(SimpleHTTPRequestHandler):
         html_parts.append("</body></html>")
 
         return "".join(html_parts)
+
+    def _generate_common_js(self):
+        """生成公共的JavaScript代码"""
+        return """
+        <script>
+        // 公共JavaScript代码
+        const title = document.title;
+        </script>
+        """
 
     def _generate_pagination_buttons(self, page, total_pages):
         """生成分页按钮，页数过多时简化显示"""
@@ -1735,6 +1960,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 currentImageIndex = index;
                 document.getElementById('imageModal').classList.add('show');
                 document.getElementById('expandedImg').src = src;
+                document.title = viewerFilesList[currentImageIndex].name;
                 
                 // 添加键盘和触摸事件监听
                 document.addEventListener('keydown', handleModalKeydown);
@@ -1743,6 +1969,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             }
 
             function closeModal() {
+                document.title = title;
                 document.getElementById('imageModal').classList.remove('show');
                 
                 // 移除键盘和触摸事件监听
@@ -1755,6 +1982,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 if (currentImageIndex < viewerFilesList.length - 1) {
                     currentImageIndex++;
                     document.getElementById('expandedImg').src = viewerFilesList[currentImageIndex].url;
+                    document.title = viewerFilesList[currentImageIndex].name;
                 }
             }
             
@@ -1762,6 +1990,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 if (currentImageIndex > 0) {
                     currentImageIndex--;
                     document.getElementById('expandedImg').src = viewerFilesList[currentImageIndex].url;
+                    document.title = viewerFilesList[currentImageIndex].name;
                 }
             }
             
@@ -1927,6 +2156,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 player.addEventListener('touchmove', handleMediaTouchMove, { passive: false });
             }
             function closeMediaPlayer() {
+                document.title = title;
                 const player = document.getElementById('mediaPlayer');
                 player.classList.remove('show');
                 document.body.style.overflow = 'auto';
@@ -2028,6 +2258,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 player.src = mediaList[index].url;
                 player.load();
                 document.getElementById('mediaTitle').textContent = mediaList[index].name;
+                document.title = mediaList[index].name;
                 renderPlaylist();
                 
                 // 设置结束事件监听，用于自动播放下一个
@@ -2191,6 +2422,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             }
 
             function closeTextViewer() {
+                document.title = title;
                 const viewer = document.getElementById('textViewer');
                 viewer.classList.remove('show');
                 document.body.style.overflow = 'auto';
@@ -2210,6 +2442,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 const textFile = textList[index];
 
                 // 更新标题
+                document.title = textFile.name;
                 document.getElementById('textTitle').textContent = textFile.name;
 
                 // 显示加载中
@@ -2380,230 +2613,6 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                 const i = Math.floor(Math.log(bytes) / Math.log(k));
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
-
-            // 文本查看器样式
-            const textViewerStyles = `
-            <style>
-                /* 文本查看器样式 */
-                .text-viewer-container {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: var(--color-white);
-                    z-index: 1000;
-                    display: none;
-                    flex-direction: column;
-                }
-
-                .text-viewer-container.show {
-                    display: flex;
-                }
-
-                .text-close-btn {
-                    position: absolute;
-                    top: 20px;
-                    right: 20px;
-                    color: var(--color-black);
-                    font-size: 40px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    z-index: 1001;
-                }
-
-                .text-viewer-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 20px;
-                    padding-right: 60px; /* 为关闭按钮留出空间 */
-                    border-bottom: 1px solid var(--color-gray-200);
-                    background: var(--color-white);
-                    flex-shrink: 0;
-                    position: relative;
-                    z-index: 2;
-                }
-
-                .text-viewer-header h2 {
-                    margin: 0;
-                    color: var(--color-gray-900);
-                    font-size: 1.5rem;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    max-width: 60%;
-                }
-
-                .text-viewer-options {
-                    display: flex;
-                    gap: 10px;
-                }
-
-                .text-viewer-btn {
-                    padding: 8px 16px;
-                    background: var(--color-gray-100);
-                    border: 1px solid var(--color-gray-300);
-                    border-radius: 4px;
-                    cursor: pointer;
-                    color: var(--color-gray-700);
-                    font-size: 14px;
-                    white-space: nowrap;
-                }
-
-                .text-viewer-btn:hover {
-                    background: var(--color-gray-200);
-                }
-
-                /* 关键修复：使用绝对定位而不是flex布局 */
-                .text-viewer-content-container {
-                    position: absolute;
-                    top: 81px; /* 头部高度 */
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    overflow: hidden;
-                }
-
-                .text-viewer-content {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    overflow: auto;
-                    padding: 20px;
-                    -webkit-overflow-scrolling: touch;
-                    box-sizing: border-box;
-                    width: 100%;
-                    max-width: 800px;   /* 限制最大宽度 */
-                    margin: 0 auto;     /* 自动居中 */
-                }
-                @media (max-width: 600px) {
-                        .text-viewer-content {
-                        padding: 10px;
-                    }
-                }
-
-                .text-viewer-content pre {
-                    white-space: pre-wrap;     /* 允许换行 */
-                    word-break: break-all;     /* 强制断词，防止超长单词溢出 */
-                    margin: 0;
-                }
-
-                .text-viewer-content .hljs {
-                    padding: 0 !important;
-                }
-
-                /* 文本文件列表样式 */
-                .text-playlist {
-                    position: absolute;
-                    top: 81px; /* 头部高度 */
-                    right: 20px;
-                    width: 300px;
-                    max-height: calc(100% - 101px); /* 头部高度 + 底部边距 */
-                    background: var(--color-white);
-                    border: 1px solid var(--color-gray-300);
-                    border-radius: 4px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                    z-index: 1002;
-                    overflow-y: auto;
-                    display: none;
-                }
-
-                .text-playlist.show {
-                    display: block;
-                }
-
-                .text-playlist-item {
-                    padding: 10px;
-                    border-bottom: 1px solid var(--color-gray-200);
-                    cursor: pointer;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-
-                .text-playlist-item:hover {
-                    background: var(--color-gray-50);
-                }
-
-                .text-playlist-item.active {
-                    background: var(--color-primary-light);
-                    color: var(--color-primary);
-                }
-
-                /* 针对Edge的特殊修复 */
-                @supports (-ms-ime-align:auto) {
-                    .text-viewer-content {
-                        overflow-y: scroll; /* 强制显示滚动条 */
-                        -ms-overflow-style: auto;
-                    }
-                }
-
-                /* 针对Chromium Edge的特殊修复 */
-                @supports (selector(:focus-visible)) {
-                    .text-viewer-content {
-                        overflow: auto;
-                    }
-                }
-
-                .text-viewer-content pre {
-                    margin: 0;
-                    padding: 0;
-                    background: transparent !important;
-                }
-
-                .text-viewer-content code {
-                    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
-                    font-size: 14px;
-                    line-height: 1.5;
-                    display: block;
-                    white-space: pre;
-                    overflow-x: auto;
-                }
-
-                /* 滚动条样式 - 确保在所有浏览器中一致 */
-                .text-viewer-content::-webkit-scrollbar {
-                    width: 12px;
-                }
-
-                .text-viewer-content::-webkit-scrollbar-track {
-                    background: var(--color-gray-100);
-                    border-radius: 6px;
-                }
-
-                .text-viewer-content::-webkit-scrollbar-thumb {
-                    background: var(--color-gray-400);
-                    border-radius: 6px;
-                    border: 3px solid var(--color-white);
-                }
-
-                .text-viewer-content::-webkit-scrollbar-thumb:hover {
-                    background: var(--color-gray-500);
-                }
-
-                /* Firefox 滚动条样式 */
-                .text-viewer-content {
-                    scrollbar-width: thin;
-                    scrollbar-color: var(--color-gray-400) var(--color-gray-100);
-                }
-
-                /* Edge滚动条样式 */
-                .text-viewer-content {
-                    -ms-overflow-style: auto;
-                }
-
-                /* 确保代码高亮区域可以滚动 */
-                .hljs {
-                    overflow: visible !important;
-                    display: block;
-                }
-            </style>
-            `;
-
-            // 添加样式到文档
-            document.head.insertAdjacentHTML('beforeend', textViewerStyles);
 
             // 添加Edge特定的滚动事件处理
             if (navigator.userAgent.includes('Edge')) {
