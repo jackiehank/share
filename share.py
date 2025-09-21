@@ -76,7 +76,7 @@ HTTP文件服务器 - 支持分页浏览、图片查看和媒体播放功能
 
 """
 
-__version__ = "0.4.5"
+__version__ = "0.4.6"
 __author__ = "Jackie Hank"
 __license__ = "MIT"
 
@@ -97,6 +97,7 @@ from collections import OrderedDict
 from html import escape
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import parse_qs, quote, unquote, urlparse
+
 
 # 常量定义
 # SSL 配置
@@ -285,781 +286,1826 @@ COMMON_TEXT_FILES = {
 }
 
 CSS_STYLES = """
-:root {
-  --move-threshold: 80px; 
-  --thumbnail-size: 410px;
-  --thumbnail-gap: 10px;
-  --color-primary: #007BFF;
-  --color-primary-dark: #0056b3;
-  --color-white: white;
-  --color-black: black;
-  --color-gray-light: #f0f0f0;
-  --color-gray-medium: #e0e0e0;
-  --color-gray-text: #333;
-  --color-gray-subtext: #666;
-  --color-gray-bg: #f9f9f9;
-  --color-border: #ccc;
-  --color-shadow: rgba(0, 0, 0, 0.1);
-  --color-overlay: rgba(0, 0, 0, 0.9);
+<style>
+    :root {
+    --move-threshold: 80px; 
+    --thumbnail-size: 410px;
+    --thumbnail-gap: 10px;
+    --color-primary: #007BFF;
+    --color-primary-dark: #0056b3;
+    --color-white: white;
+    --color-black: black;
+    --color-gray-light: #f0f0f0;
+    --color-gray-medium: #e0e0e0;
+    --color-gray-text: #333;
+    --color-gray-subtext: #666;
+    --color-gray-bg: #f9f9f9;
+    --color-border: #ccc;
+    --color-shadow: rgba(0, 0, 0, 0.1);
+    --color-overlay: rgba(0, 0, 0, 0.9);
 
 
-  --color-primary: #2D6FF7;
-  --color-primary-dark: #1A56C2;
-  --color-primary-light: #E0EBFF;
-  --color-white: #ffffff;
-  --color-black: #1A1A1A;
-  --color-gray-50: #F9FAFB;
-  --color-gray-100: #F3F4F6;
-  --color-gray-200: #E5E7EB;
-  --color-gray-300: #D1D5DB;
-  --color-gray-400: #9CA3AF;
-  --color-gray-500: #6B7280;
-  --color-gray-600: #4B5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1F2937;
-  --color-gray-900: #111827;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --border-radius: 8px;
-  --border-radius-sm: 4px;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --transition: all 0.2s ease;
-}
-
-body { font-family: sans-serif; padding: 0.5em; margin: 0; }
-table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 0.5em; border-bottom: 1px solid var(--color-border); }
-th:nth-child(1), td:nth-child(1) { width: 80%; }  /* 名称列占80% */
-th:nth-child(2), td:nth-child(2) { width: 20%; }  /* 大小列占20% */
-tr:hover { background-color: var(--color-gray-50); }
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--color-gray-200);
-}
-
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 0.5rem;
-  box-sizing: border-box;
-}
-
-h1 {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--color-gray-900);
-}
-
-.view-options {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.view-btn {
-  padding: 0.5rem 1rem;
-  background: var(--color-white);
-  color: var(--color-gray-700);
-  border: 1px solid var(--color-gray-300);
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.view-btn:hover {
-  background: var(--color-gray-100);
-  border-color: var(--color-gray-400);
-}
-
-.view-btn.active {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-/* 文件名允许换行 */
-.filename-cell {
-  word-wrap: break-word;      /* 允许长单词换行 */
-  word-break: break-all;      /* 强制换行 */
-  white-space: normal;        /* 允许换行 */
-}
-
-.filename-cell {
-  word-wrap: break-word;
-  word-break: break-word;
-  white-space: normal;
-}
-
-.filename-cell a {
-  color: var(--color-gray-900);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: var(--transition);
-}
-
-.filename-cell a:hover {
-  color: var(--color-primary);
-}
-
-.filename-cell a::before {
-  content: '';
-  display: inline-block;
-  width: 1.5rem;
-  height: 1.5rem;
-  background-size: contain;
-  background-repeat: no-repeat;
-  flex-shrink: 0;
-}
-
-.filename-cell a[href$="/"]::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236B7280'%3E%3Cpath d='M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V6h5.17l2 2H20v10z'/%3E%3C/svg%3E");
-}
-
-.filename-cell a:not([href$="/"])::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236B7280'%3E%3Cpath d='M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z'/%3E%3C/svg%3E");
-}
-
-.file-size {
-  color: var(--color-gray-600);
-  font-feature-settings: 'tnum';
-  font-variant-numeric: tabular-nums;
-}
-
-.pagination { margin-top: 1em; }
-.pagination a,button { margin: 0 0.2em; text-decoration: none; color: var(--color-primary); }
-.pagination strong { margin: 0 0.2em; }
-.ellipsis { margin: 0 0.25em;padding: 0.5em 0;color: var(--color-gray-subtext); }
-
-.pagination { margin-top: 1.5em; text-align: center; }
-.pagination a, .pagination strong,button { display: inline-block; margin: 0 0.25em; padding: 0.5em 0.75em; text-decoration: none; border-radius: 4px; }
-.pagination a,button { background-color: var(--color-gray-light); color: var(--color-gray-text); }
-.pagination a:hover,button:hover { background-color: var(--color-gray-medium); }
-.pagination strong { background-color: var(--color-primary); color: var(--color-white); }
-
-/* 上传相关样式 */
-.upload-container {
-    position: relative;
-    display: inline-block;
-}
-
-.upload-progress {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: white;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    z-index: 1000;
-    min-width: 200px;
-    max-width: 300px;
-    display: none;
-}
-
-.progress-item {
-    margin-bottom: 8px;
-    font-size: 14px;
-}
-
-.progress-item:last-child {
-    margin-bottom: 0;
-}
-
-.progress-filename {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    margin-bottom: 4px;
-}
-
-.progress-bar-container {
-    height: 4px;
-    background: #f0f0f0;
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.progress-bar-fill {
-    height: 100%;
-    background: var(--color-primary);
-    transition: width 0.3s ease;
-}
-
-.drag-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.drag-overlay.active {
-    opacity: 1;
-}
-
-.drag-message {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    font-size: 18px;
-}
-
-/* 桌面端保持正常表格样式 */
-@media (min-width: 601px) {
-    th, td { display: table-cell; }
-}
-
-/* 移动端紧凑显示 */
-@media (max-width: 600px) {
-    body { padding: 0.5em; }
-    table { 
-        font-size: 1em; /* 稍微减小字体大小 */
-        display: table; /* 确保表格保持表格布局 */
-        width: 100%;
+    --color-primary: #2D6FF7;
+    --color-primary-dark: #1A56C2;
+    --color-primary-light: #E0EBFF;
+    --color-white: #ffffff;
+    --color-black: #1A1A1A;
+    --color-gray-50: #F9FAFB;
+    --color-gray-100: #F3F4F6;
+    --color-gray-200: #E5E7EB;
+    --color-gray-300: #D1D5DB;
+    --color-gray-400: #9CA3AF;
+    --color-gray-500: #6B7280;
+    --color-gray-600: #4B5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1F2937;
+    --color-gray-900: #111827;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-error: #EF4444;
+    --border-radius: 8px;
+    --border-radius-sm: 4px;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --transition: all 0.2s ease;
     }
-    thead { display: none; } /* 隐藏表头 */
-    tr { 
-        display: table-row; /* 保持行布局 */
-        border-bottom: 1px solid var(--color-border); /* 只在行之间添加边框 */
-        background: none; /* 移除背景色 */
-        margin-bottom: 0; /* 移除行间距 */
-        padding: 0; /* 移除内边距 */
-    }
-    td { 
-        display: table-cell; /* 保持单元格布局 */
-        padding: 0.4em 0.3em; /* 减小内边距 */
-        border: none; /* 移除单元格边框 */
-        position: static; /* 移除相对定位 */
-        text-align: left; /* 左对齐文本 */
-        font-size: 1em; /* 稍微减小字体大小 */
-    }
-    td:before { display: none; } /* 移除伪元素 */
-    
-    /* 特定列的样式调整 */
-    td:nth-child(1) { /* 名称列 */
-        padding-left: 0.5em; /* 增加左侧内边距 */
-    }
-    td:nth-child(3) { /* 大小列 */
-        text-align: right; /* 右对齐 */
-        width: 15%; /* 增加宽度 */
-        padding-right: 0.5em; /* 增加右侧内边距 */
-        white-space: nowrap; /* 防止换行 */
-    }
-    
-    /* 文件名单元格特殊处理 */
-    .filename-cell {
-        padding-left: 0.5em !important;
-        flex: none; /* 移除弹性布局 */
-        order: 0; /* 恢复顺序 */
-        margin-bottom: 0; /* 移除底部边距 */
-    }
-    
-    /* 调整分页样式 */
-    .pagination {
-        margin-top: 1em;
-        font-size: 0.9em;
-    }
-    
-    /* 调整按钮样式 */
-    .view-btn {
-        padding: 0.4em 0.8em;
-        font-size: 0.9em;
-        margin: 0.3em 0.3em 0.3em 0;
-    }
-}
 
-/* 图片查看器样式 */
-#image-viewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--color-black); z-index: 1000; overflow: hidden; }
-#viewer-close { position: absolute; top: 20px; right: 35px; color: var(--color-white); font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; }
-#viewer-scroll-container { height: calc(100vh - 10px); overflow-y: auto; position: relative; }
-#viewer-container { position: relative; }
-#viewer-phantom { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; }
-.img-wrap { position: absolute; width:  var(--thumbnail-size); height: var(--thumbnail-size); display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 5px; box-shadow: 0 2px 6px var(--color-shadow); cursor: pointer; transition: transform 0.2s; transform: translateZ(0); }
-.img-item { width: 100%; height: 100%; object-fit: cover; }
-.modal { 
-    display: none; 
-    position: fixed; 
-    z-index: 1001; 
-    left: 0; 
-    top: 0; 
-    width: 100%; 
-    height: 100%; 
-    background-color: var(--color-overlay); 
-    /* 添加以下属性使内容居中 */
-    justify-content: center;
-    align-items: center;
-}
-.modal.show { 
-    display: flex; /* 修改为flex以启用居中布局 */
-}
-.modal-content { 
-    max-width: 100%; 
-    max-height: 100%; 
-    object-fit: contain;
-    /* 添加以下属性确保图片在容器内居中 */
-    margin: auto;
-    display: block;
-}
-.close { 
-    position: absolute; 
-    top: 20px; 
-    right: 35px; 
-    color: var(--color-white); 
-    font-size: 40px; 
-    font-weight: bold; 
-    cursor: pointer; 
-    z-index: 1002; /* 提高z-index确保关闭按钮在图片上方 */
-}
-.close:hover { color: #ccc; }
+    body { font-family: sans-serif; padding: 0.5em; margin: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.5em; border-bottom: 1px solid var(--color-border); }
+    th:nth-child(1), td:nth-child(1) { width: 80%; }  /* 名称列占80% */
+    th:nth-child(2), td:nth-child(2) { width: 20%; }  /* 大小列占20% */
+    tr:hover { background-color: var(--color-gray-50); }
 
-/* 媒体播放器样式 */
-.media-player-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--color-overlay);
-    z-index: 1000;
-    display: none;
-    justify-content: center;
-    align-items: center;
-}
-.media-player-container.show {
-    display: flex;
-}
-.media-player {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 100vw;
-    max-height: 100vh;
-    background: var(--color-black);
-    border-radius: 8px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
-    margin: auto;
-}
-.media-player video, .media-player audio {
-    width: 100%;
-    height: 100%;
-    max-height: 100vh;
-    object-fit: contain;
-    margin: 0 auto;
-    outline: none;
-}
-/* 确保视频容器正确填充空间 */
-.media-player > video,
-.media-player > audio {
-    flex: 1; /* 占据所有可用空间 */
-    min-height: 0; /* 允许缩小 */
-    object-fit: contain;
-    width: 100%;
-}
-/* 确保视频元素在容器内垂直居中 */
-.media-player video {
-    display: block;
-    margin: auto;
-}
-/* 音频播放器样式 - 确保显示默认控制条 */
-.media-player audio {
-    width: 100%;
-    height: auto; /* 不指定固定高度，允许浏览器自适应 */
-    min-height: 60px; /* 给音频播放器最小高度，保证进度条显示 */
-    margin: 0 auto;
-    outline: none;
-    display: block; /* 确保显示 */
-}
-.media-controls {
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.7);
-    min-height: 100px; /* 控制区域最小高度 */
-}
-/* 视频标题区域 - 固定2行高度，可滚动 */
-.media-title-container {
-    height: 3em; /* 2行文字的高度 */
-    overflow-y: auto; /* 垂直滚动 */
-    margin-bottom: 10px;
-    scrollbar-width: thin; /* Firefox */
-}
-
-.media-title-container::-webkit-scrollbar {
-    width: 6px; /* WebKit浏览器滚动条宽度 */
-}
-
-.media-title-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
-}
-.media-title {
-    color: var(--color-white);
-    font-size: 16px;
-    text-align: center;
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    line-height: 1.5;
-    margin: 0;
-    padding: 0;
-}
-.media-progress {
-    width: 100%;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-    cursor: pointer;
-}
-.media-progress-filled {
-    height: 100%;
-    background: var(--color-primary);
-    border-radius: 2px;
-    width: 0%;
-}
-.media-buttons {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 40px; /* 固定按钮高度 */;
-}
-/* 控制按钮容器 */
-.media-control-buttons {
+    .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 10px;
-    gap: 10px; /* 添加间距 */
-}
-/* 播放列表按钮样式 - 占据剩余空间 */
-.playlist-toggle-btn {
-    background: var(--color-gray-600);
-    color: var(--color-white);
-    border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s;
-    flex: 1; /* 占据剩余所有空间 */
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.playlist-toggle-btn:hover {
-    background: var(--color-gray-900);
-}
-/* 连播复选框样式 - 固定宽度 */
-.continuous-play-label {
-    display: flex;
-    align-items: center;
-    background: var(--color-gray-dark);
-    color: var(--color-white);
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s;
-    white-space: nowrap;
-    flex-shrink: 0; /* 防止缩小 */
-}
-.continuous-play-label:hover {
-    background: var(--color-gray);
-}
-.continuous-play-label input[type="checkbox"] {
-    margin-right: 5px;
-    cursor: pointer;
-}
-/* 播放列表样式 - 作为弹出层 */
-.media-playlist {
-    position: absolute;
-    bottom: 100px; /* 在控制区域上方 */
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: 800px;
-    width: 80%;
-    max-height: 30vh;
-    overflow-y: auto;
-    background: var(--color-white);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 10;
-    padding: 10px;
-    display: none;
-}
-.media-playlist.show {
-    /* 当显示时 */
-    display: block;
-}
-.media-playlist-item {
-    padding: 10px;
-    border-bottom: 1px solid var(--color-border);
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center; /* 垂直居中 */
-}
-.media-playlist-item:hover {
-    background: var(--color-gray-light);
-}
-.media-playlist-item.active {
-    background: var(--color-primary);
-    color: var(--color-white);
-}
-.media-close-btn {
-    position: absolute;
-    top: 20px;
-    right: 35px;
-    color: var(--color-white);
-    font-size: 40px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 1001;
-}
-
-/* 文本查看器样式 */
-.text-viewer-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--color-white);
-    z-index: 1000;
-    display: none;
-    flex-direction: column;
-}
-
-.text-viewer-container.show {
-    display: flex;
-}
-
-.text-close-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    color: var(--color-black);
-    font-size: 40px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 1001;
-}
-
-.text-viewer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    padding-right: 60px; /* 为关闭按钮留出空间 */
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
     border-bottom: 1px solid var(--color-gray-200);
-    background: var(--color-white);
-    flex-shrink: 0;
-    position: relative;
-    z-index: 2;
-}
+    }
 
-.text-viewer-header h2 {
-    margin: 0;
-    color: var(--color-gray-900);
-    font-size: 1.5rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 60%;
-}
-
-.text-viewer-options {
-    display: flex;
-    gap: 10px;
-}
-
-.text-viewer-btn {
-    padding: 8px 16px;
-    background: var(--color-gray-100);
-    border: 1px solid var(--color-gray-300);
-    border-radius: 4px;
-    cursor: pointer;
-    color: var(--color-gray-700);
-    font-size: 14px;
-    white-space: nowrap;
-}
-
-.text-viewer-btn:hover {
-    background: var(--color-gray-200);
-}
-
-/* 关键修复：使用绝对定位而不是flex布局 */
-.text-viewer-content-container {
-    position: absolute;
-    top: 81px; /* 头部高度 */
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
-}
-
-.text-viewer-content {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: auto;
-    padding: 20px;
-    -webkit-overflow-scrolling: touch;
+    .container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 0.5rem;
     box-sizing: border-box;
-    width: 100%;
-    max-width: 800px;   /* 限制最大宽度 */
-    margin: 0 auto;     /* 自动居中 */
-}
-@media (max-width: 600px) {
-        .text-viewer-content {
-        padding: 10px;
     }
-}
 
-.text-viewer-content pre {
-    white-space: pre-wrap;     /* 允许换行 */
-    word-break: break-all;     /* 强制断词，防止超长单词溢出 */
+    h1 {
     margin: 0;
-}
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--color-gray-900);
+    }
 
-.text-viewer-content .hljs {
-    padding: 0 !important;
-}
-
-/* 文本文件列表样式 */
-.text-playlist {
-    position: absolute;
-    top: 81px; /* 头部高度 */
-    right: 20px;
-    width: 300px;
-    max-height: calc(100% - 101px); /* 头部高度 + 底部边距 */
-    background: var(--color-white);
-    border: 1px solid var(--color-gray-300);
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1002;
-    overflow-y: auto;
-    display: none;
-}
-
-.text-playlist.show {
-    display: block;
-}
-
-.text-playlist-item {
-    padding: 10px;
-    border-bottom: 1px solid var(--color-gray-200);
-    cursor: pointer;
+    .view-options {
     display: flex;
-    justify-content: space-between;
+    gap: 0.5rem;
+    }
+
+    .view-btn {
+    padding: 0.5rem 1rem;
+    background: var(--color-white);
+    color: var(--color-gray-700);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: var(--transition);
+    display: flex;
     align-items: center;
-}
+    gap: 0.375rem;
+    }
 
-.text-playlist-item:hover {
-    background: var(--color-gray-50);
-}
+    .view-btn:hover {
+    background: var(--color-gray-100);
+    border-color: var(--color-gray-400);
+    }
 
-.text-playlist-item.active {
+    .view-btn.active {
     background: var(--color-primary-light);
     color: var(--color-primary);
-}
+    border-color: var(--color-primary);
+    }
 
-/* 针对Edge的特殊修复 */
-@supports (-ms-ime-align:auto) {
+    /* 文件名允许换行 */
+    .filename-cell {
+    word-wrap: break-word;      /* 允许长单词换行 */
+    word-break: break-all;      /* 强制换行 */
+    white-space: normal;        /* 允许换行 */
+    }
+
+    .filename-cell {
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    }
+
+    .filename-cell a {
+    color: var(--color-gray-900);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+    }
+
+    .filename-cell a:hover {
+    color: var(--color-primary);
+    }
+
+    .filename-cell a::before {
+    content: '';
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    background-size: contain;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
+    }
+
+    .filename-cell a[href$="/"]::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236B7280'%3E%3Cpath d='M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V6h5.17l2 2H20v10z'/%3E%3C/svg%3E");
+    }
+
+    .filename-cell a:not([href$="/"])::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236B7280'%3E%3Cpath d='M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z'/%3E%3C/svg%3E");
+    }
+
+    .file-size {
+    color: var(--color-gray-600);
+    font-feature-settings: 'tnum';
+    font-variant-numeric: tabular-nums;
+    }
+
+    .pagination { margin-top: 1em; }
+    .pagination a,button { margin: 0 0.2em; text-decoration: none; color: var(--color-primary); }
+    .pagination strong { margin: 0 0.2em; }
+    .ellipsis { margin: 0 0.25em;padding: 0.5em 0;color: var(--color-gray-subtext); }
+
+    .pagination { margin-top: 1.5em; text-align: center; }
+    .pagination a, .pagination strong,button { display: inline-block; margin: 0 0.25em; padding: 0.5em 0.75em; text-decoration: none; border-radius: 4px; }
+    .pagination a,button { background-color: var(--color-gray-light); color: var(--color-gray-text); }
+    .pagination a:hover,button:hover { background-color: var(--color-gray-medium); }
+    .pagination strong { background-color: var(--color-primary); color: var(--color-white); }
+
+    /* 上传相关样式 */
+    .upload-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .upload-progress {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: 1000;
+        min-width: 200px;
+        max-width: 300px;
+        display: none;
+    }
+
+    .progress-item {
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .progress-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .progress-filename {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-bottom: 4px;
+    }
+
+    .progress-bar-container {
+        height: 4px;
+        background: #f0f0f0;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: var(--color-primary);
+        transition: width 0.3s ease;
+    }
+
+    .drag-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .drag-overlay.active {
+        opacity: 1;
+    }
+
+    .drag-message {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 18px;
+    }
+
+    /* 桌面端保持正常表格样式 */
+    @media (min-width: 601px) {
+        th, td { display: table-cell; }
+    }
+
+    /* 移动端紧凑显示 */
+    @media (max-width: 600px) {
+        body { padding: 0.5em; }
+        table { 
+            font-size: 1em; /* 稍微减小字体大小 */
+            display: table; /* 确保表格保持表格布局 */
+            width: 100%;
+        }
+        thead { display: none; } /* 隐藏表头 */
+        tr { 
+            display: table-row; /* 保持行布局 */
+            border-bottom: 1px solid var(--color-border); /* 只在行之间添加边框 */
+            background: none; /* 移除背景色 */
+            margin-bottom: 0; /* 移除行间距 */
+            padding: 0; /* 移除内边距 */
+        }
+        td { 
+            display: table-cell; /* 保持单元格布局 */
+            padding: 0.4em 0.3em; /* 减小内边距 */
+            border: none; /* 移除单元格边框 */
+            position: static; /* 移除相对定位 */
+            text-align: left; /* 左对齐文本 */
+            font-size: 1em; /* 稍微减小字体大小 */
+        }
+        td:before { display: none; } /* 移除伪元素 */
+        
+        /* 特定列的样式调整 */
+        td:nth-child(1) { /* 名称列 */
+            padding-left: 0.5em; /* 增加左侧内边距 */
+        }
+        td:nth-child(3) { /* 大小列 */
+            text-align: right; /* 右对齐 */
+            width: 15%; /* 增加宽度 */
+            padding-right: 0.5em; /* 增加右侧内边距 */
+            white-space: nowrap; /* 防止换行 */
+        }
+        
+        /* 文件名单元格特殊处理 */
+        .filename-cell {
+            padding-left: 0.5em !important;
+            flex: none; /* 移除弹性布局 */
+            order: 0; /* 恢复顺序 */
+            margin-bottom: 0; /* 移除底部边距 */
+        }
+        
+        /* 调整分页样式 */
+        .pagination {
+            margin-top: 1em;
+            font-size: 0.9em;
+        }
+        
+        /* 调整按钮样式 */
+        .view-btn {
+            padding: 0.4em 0.8em;
+            font-size: 0.9em;
+            margin: 0.3em 0.3em 0.3em 0;
+        }
+    }
+
+    /* 图片查看器样式 */
+    #image-viewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--color-black); z-index: 1000; overflow: hidden; }
+    #viewer-close { position: absolute; top: 20px; right: 35px; color: var(--color-white); font-size: 40px; font-weight: bold; cursor: pointer; z-index: 1001; }
+    #viewer-scroll-container { height: calc(100vh - 10px); overflow-y: auto; position: relative; }
+    #viewer-container { position: relative; }
+    #viewer-phantom { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; }
+    .img-wrap { position: absolute; width:  var(--thumbnail-size); height: var(--thumbnail-size); display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 5px; box-shadow: 0 2px 6px var(--color-shadow); cursor: pointer; transition: transform 0.2s; transform: translateZ(0); }
+    .img-item { width: 100%; height: 100%; object-fit: cover; }
+    .modal { 
+        display: none; 
+        position: fixed; 
+        z-index: 1001; 
+        left: 0; 
+        top: 0; 
+        width: 100%; 
+        height: 100%; 
+        background-color: var(--color-overlay); 
+        /* 添加以下属性使内容居中 */
+        justify-content: center;
+        align-items: center;
+    }
+    .modal.show { 
+        display: flex; /* 修改为flex以启用居中布局 */
+    }
+    .modal-content { 
+        max-width: 100%; 
+        max-height: 100%; 
+        object-fit: contain;
+        /* 添加以下属性确保图片在容器内居中 */
+        margin: auto;
+        display: block;
+    }
+    .close { 
+        position: absolute; 
+        top: 20px; 
+        right: 35px; 
+        color: var(--color-white); 
+        font-size: 40px; 
+        font-weight: bold; 
+        cursor: pointer; 
+        z-index: 1002; /* 提高z-index确保关闭按钮在图片上方 */
+    }
+    .close:hover { color: #ccc; }
+
+    /* 媒体播放器样式 */
+    .media-player-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--color-overlay);
+        z-index: 1000;
+        display: none;
+        justify-content: center;
+        align-items: center;
+    }
+    .media-player-container.show {
+        display: flex;
+    }
+    .media-player {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 100vw;
+        max-height: 100vh;
+        background: var(--color-black);
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+        margin: auto;
+    }
+    .media-player video, .media-player audio {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        object-fit: contain;
+        margin: 0 auto;
+        outline: none;
+    }
+    /* 确保视频容器正确填充空间 */
+    .media-player > video,
+    .media-player > audio {
+        flex: 1; /* 占据所有可用空间 */
+        min-height: 0; /* 允许缩小 */
+        object-fit: contain;
+        width: 100%;
+    }
+    /* 确保视频元素在容器内垂直居中 */
+    .media-player video {
+        display: block;
+        margin: auto;
+    }
+    /* 音频播放器样式 - 确保显示默认控制条 */
+    .media-player audio {
+        width: 100%;
+        height: auto; /* 不指定固定高度，允许浏览器自适应 */
+        min-height: 60px; /* 给音频播放器最小高度，保证进度条显示 */
+        margin: 0 auto;
+        outline: none;
+        display: block; /* 确保显示 */
+    }
+    .media-controls {
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        min-height: 100px; /* 控制区域最小高度 */
+    }
+    /* 视频标题区域 - 固定2行高度，可滚动 */
+    .media-title-container {
+        height: 3em; /* 2行文字的高度 */
+        overflow-y: auto; /* 垂直滚动 */
+        margin-bottom: 10px;
+        scrollbar-width: thin; /* Firefox */
+    }
+
+    .media-title-container::-webkit-scrollbar {
+        width: 6px; /* WebKit浏览器滚动条宽度 */
+    }
+
+    .media-title-container::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+    }
+    .media-title {
+        color: var(--color-white);
+        font-size: 16px;
+        text-align: center;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
+    }
+    .media-progress {
+        width: 100%;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+        cursor: pointer;
+    }
+    .media-progress-filled {
+        height: 100%;
+        background: var(--color-primary);
+        border-radius: 2px;
+        width: 0%;
+    }
+    .media-buttons {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 40px; /* 固定按钮高度 */;
+    }
+    /* 控制按钮容器 */
+    .media-control-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        gap: 10px; /* 添加间距 */
+    }
+    /* 播放列表按钮样式 - 占据剩余空间 */
+    .playlist-toggle-btn {
+        background: var(--color-gray-600);
+        color: var(--color-white);
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s;
+        flex: 1; /* 占据剩余所有空间 */
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .playlist-toggle-btn:hover {
+        background: var(--color-gray-900);
+    }
+    /* 连播复选框样式 - 固定宽度 */
+    .continuous-play-label {
+        display: flex;
+        align-items: center;
+        background: var(--color-gray-dark);
+        color: var(--color-white);
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0; /* 防止缩小 */
+    }
+    .continuous-play-label:hover {
+        background: var(--color-gray);
+    }
+    .continuous-play-label input[type="checkbox"] {
+        margin-right: 5px;
+        cursor: pointer;
+    }
+    /* 播放列表样式 - 作为弹出层 */
+    .media-playlist {
+        position: absolute;
+        bottom: 100px; /* 在控制区域上方 */
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 800px;
+        width: 80%;
+        max-height: 30vh;
+        overflow-y: auto;
+        background: var(--color-white);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 10;
+        padding: 10px;
+        display: none;
+    }
+    .media-playlist.show {
+        /* 当显示时 */
+        display: block;
+    }
+    .media-playlist-item {
+        padding: 10px;
+        border-bottom: 1px solid var(--color-border);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center; /* 垂直居中 */
+    }
+    .media-playlist-item:hover {
+        background: var(--color-gray-light);
+    }
+    .media-playlist-item.active {
+        background: var(--color-primary);
+        color: var(--color-white);
+    }
+    .media-close-btn {
+        position: absolute;
+        top: 20px;
+        right: 35px;
+        color: var(--color-white);
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+    }
+
+    /* 文本查看器样式 */
+    .text-viewer-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--color-white);
+        z-index: 1000;
+        display: none;
+        flex-direction: column;
+    }
+
+    .text-viewer-container.show {
+        display: flex;
+    }
+
+    .text-close-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: var(--color-black);
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+    }
+
+    .text-viewer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        padding-right: 60px; /* 为关闭按钮留出空间 */
+        border-bottom: 1px solid var(--color-gray-200);
+        background: var(--color-white);
+        flex-shrink: 0;
+        position: relative;
+        z-index: 2;
+    }
+
+    .text-viewer-header h2 {
+        margin: 0;
+        color: var(--color-gray-900);
+        font-size: 1.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 60%;
+    }
+
+    .text-viewer-options {
+        display: flex;
+        gap: 10px;
+    }
+
+    .text-viewer-btn {
+        padding: 8px 16px;
+        background: var(--color-gray-100);
+        border: 1px solid var(--color-gray-300);
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--color-gray-700);
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .text-viewer-btn:hover {
+        background: var(--color-gray-200);
+    }
+
+    /* 关键修复：使用绝对定位而不是flex布局 */
+    .text-viewer-content-container {
+        position: absolute;
+        top: 81px; /* 头部高度 */
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: hidden;
+    }
+
     .text-viewer-content {
-        overflow-y: scroll; /* 强制显示滚动条 */
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: auto;
+        padding: 20px;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 800px;   /* 限制最大宽度 */
+        margin: 0 auto;     /* 自动居中 */
+    }
+    @media (max-width: 600px) {
+            .text-viewer-content {
+            padding: 10px;
+        }
+    }
+
+    .text-viewer-content pre {
+        white-space: pre-wrap;     /* 允许换行 */
+        word-break: break-all;     /* 强制断词，防止超长单词溢出 */
+        margin: 0;
+    }
+
+    .text-viewer-content .hljs {
+        padding: 0 !important;
+    }
+
+    /* 文本文件列表样式 */
+    .text-playlist {
+        position: absolute;
+        top: 81px; /* 头部高度 */
+        right: 20px;
+        width: 300px;
+        max-height: calc(100% - 101px); /* 头部高度 + 底部边距 */
+        background: var(--color-white);
+        border: 1px solid var(--color-gray-300);
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1002;
+        overflow-y: auto;
+        display: none;
+    }
+
+    .text-playlist.show {
+        display: block;
+    }
+
+    .text-playlist-item {
+        padding: 10px;
+        border-bottom: 1px solid var(--color-gray-200);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .text-playlist-item:hover {
+        background: var(--color-gray-50);
+    }
+
+    .text-playlist-item.active {
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+    }
+
+    /* 针对Edge的特殊修复 */
+    @supports (-ms-ime-align:auto) {
+        .text-viewer-content {
+            overflow-y: scroll; /* 强制显示滚动条 */
+            -ms-overflow-style: auto;
+        }
+    }
+
+    /* 针对Chromium Edge的特殊修复 */
+    @supports (selector(:focus-visible)) {
+        .text-viewer-content {
+            overflow: auto;
+        }
+    }
+
+    .text-viewer-content pre {
+        margin: 0;
+        padding: 0;
+        background: transparent !important;
+    }
+
+    .text-viewer-content code {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        display: block;
+        white-space: pre;
+        overflow-x: auto;
+    }
+
+    /* 滚动条样式 - 确保在所有浏览器中一致 */
+    .text-viewer-content::-webkit-scrollbar {
+        width: 12px;
+    }
+
+    .text-viewer-content::-webkit-scrollbar-track {
+        background: var(--color-gray-100);
+        border-radius: 6px;
+    }
+
+    .text-viewer-content::-webkit-scrollbar-thumb {
+        background: var(--color-gray-400);
+        border-radius: 6px;
+        border: 3px solid var(--color-white);
+    }
+
+    .text-viewer-content::-webkit-scrollbar-thumb:hover {
+        background: var(--color-gray-500);
+    }
+
+    /* Firefox 滚动条样式 */
+    .text-viewer-content {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-gray-400) var(--color-gray-100);
+    }
+
+    /* Edge滚动条样式 */
+    .text-viewer-content {
         -ms-overflow-style: auto;
     }
-}
 
-/* 针对Chromium Edge的特殊修复 */
-@supports (selector(:focus-visible)) {
-    .text-viewer-content {
-        overflow: auto;
+    /* 确保代码高亮区域可以滚动 */
+    .hljs {
+        overflow: visible !important;
+        display: block;
     }
-}
+</style>
+<!-- 使用preload提高CSS加载性能 -->
+<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+"""
 
-.text-viewer-content pre {
-    margin: 0;
-    padding: 0;
-    background: transparent !important;
-}
+# 文件上传HTML
+UPLOAD_FILE_HTML = """
+<div class="upload-container">
+    <button class="view-btn" onclick="openFileDialog()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+    </svg>上传</button>
+    <input type="file" id="fileInput" style="display:none" multiple>
+    <div class="upload-progress" id="uploadProgress"></div>
+    <div class="drag-overlay" id="dragOverlay">
+        <div class="drag-message">拖放到此处上传</div>
+    </div>
+</div>
+"""
 
-.text-viewer-content code {
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
-    font-size: 14px;
-    line-height: 1.5;
-    display: block;
-    white-space: pre;
-    overflow-x: auto;
-}
+# 图片查看器HTML
+IMAGE_VIEWER_HTML = """
+<div id="imageModal" class="modal">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <img class="modal-content" id="expandedImg">
+</div>
+"""
 
-/* 滚动条样式 - 确保在所有浏览器中一致 */
-.text-viewer-content::-webkit-scrollbar {
-    width: 12px;
-}
+# 媒体播放器HTML
+MEDIA_PLAYER_HTML = """
+<div id="mediaPlayer" class="media-player-container">
+    <span class="media-close-btn" onclick="closeMediaPlayer()">&times;</span>
+    <div class="media-player">
+        <video id="videoPlayer" controls style="display: none;">
+            Your browser does not support the video tag.
+        </video>
+        <audio id="audioPlayer" controls style="display: none;">
+            Your browser does not support the audio element.
+        </audio>
+        <div class="media-controls">
+            <div class="media-title-container">
+                <div class="media-title" id="mediaTitle">Media Title</div>
+            </div>
+            <div class="media-control-buttons">
+                <button id="playlistToggleBtn" class="playlist-toggle-btn">显示播放列表</button>
+                <label class="continuous-play-label">
+                    <input type="checkbox" id="continuousPlayCheckbox" checked>
+                    连播
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="media-playlist" id="mediaPlaylist"></div>
+</div>
+"""
 
-.text-viewer-content::-webkit-scrollbar-track {
-    background: var(--color-gray-100);
-    border-radius: 6px;
-}
+# 文本查看器HTML和JavaScript
+TEXT_VIEWER_HTML = """
+<div id="textViewer" class="text-viewer-container">
+    <span class="text-close-btn" onclick="closeTextViewer()">&times;</span>
+    <div class="text-viewer-header">
+        <h2 id="textTitle">文本查看器</h2>
+        <div class="text-viewer-options">
+            <button id="textListToggle" class="text-viewer-btn" onclick="toggleTextList()">显示列表</button>
+            <button id="textWrapToggle" class="text-viewer-btn" onclick="toggleTextWrap()">换行</button>
+            <!-- <button class="text-viewer-btn" onclick="copyTextContent()">复制</button> -->
+        </div>
+    </div>
+    <div class="text-viewer-content-container">
+        <div class="text-viewer-content">
+            <pre><code id="textContent" class="hljs"></code></pre>
+        </div>
+    </div>
+    <!-- 文本文件列表 -->
+    <div class="text-playlist" id="textPlaylist"></div>
+</div>
 
-.text-viewer-content::-webkit-scrollbar-thumb {
-    background: var(--color-gray-400);
-    border-radius: 6px;
-    border: 3px solid var(--color-white);
-}
+"""
 
-.text-viewer-content::-webkit-scrollbar-thumb:hover {
-    background: var(--color-gray-500);
-}
+JS_SCRIPTS = """
+<script>
+    // 文件上传相关
+    let uploads = {};
 
-/* Firefox 滚动条样式 */
-.text-viewer-content {
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-gray-400) var(--color-gray-100);
-}
+    function openFileDialog() {
+        document.getElementById('fileInput').click();
+    }
 
-/* Edge滚动条样式 */
-.text-viewer-content {
-    -ms-overflow-style: auto;
-}
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        uploadFiles(e.target.files);
+    });
 
-/* 确保代码高亮区域可以滚动 */
-.hljs {
-    overflow: visible !important;
-    display: block;
-}
+    function uploadFiles(files) {
+        const progressContainer = document.getElementById("uploadProgress");
+        progressContainer.style.display = "block";
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileId = Date.now() + '-' + i;
+            
+            // 添加上传项目到界面
+            const progressItem = document.createElement('div');
+            progressItem.className = 'progress-item';
+            progressItem.id = 'progress-' + fileId;
+            
+            const fileName = document.createElement('div');
+            fileName.className = 'progress-filename';
+            fileName.textContent = file.name;
+            
+            const progressBarContainer = document.createElement('div');
+            progressBarContainer.className = 'progress-bar-container';
+            
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress-bar-fill';
+            progressBar.style.width = '0%';
+            
+            progressBarContainer.appendChild(progressBar);
+            progressItem.appendChild(fileName);
+            progressItem.appendChild(progressBarContainer);
+            progressContainer.appendChild(progressItem);
+            
+            // 开始上传
+            uploadFile(file, fileId);
+        }
+    }
+
+    function uploadFile(file, fileId) {
+        uploads[fileId] = {
+            file: file,
+            loaded: 0,
+            total: file.size
+        };
+        
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/upload?path=" + encodeURIComponent(window.location.pathname));
+        
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const progress = (e.loaded / e.total) * 100;
+                document.querySelector('#progress-' + fileId + ' .progress-bar-fill').style.width = progress + '%';
+                uploads[fileId].loaded = e.loaded;
+            }
+        };
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                document.querySelector('#progress-' + fileId + ' .progress-bar-fill').style.background = 'var(--color-success)';
+                setTimeout(() => {
+                    document.getElementById('progress-' + fileId).remove();
+                    if (document.getElementById('uploadProgress').children.length === 0) {
+                        document.getElementById('uploadProgress').style.display = 'none';
+                        location.reload();
+                    }
+                }, 1000);
+            } else {
+                document.querySelector('#progress-' + fileId + ' .progress-bar-fill').style.background = 'var(--color-error)';
+                document.querySelector('#progress-' + fileId + ' .progress-filename').innerHTML += 
+                    ' <span style="color:var(--color-error)">(上传失败)</span>';
+            }
+        };
+        
+        xhr.onerror = function() {
+            document.querySelector('#progress-' + fileId + ' .progress-bar-fill').style.background = 'var(--color-error)';
+            document.querySelector('#progress-' + fileId + ' .progress-filename').innerHTML += 
+                ' <span style="color:var(--color-error)">(网络错误)</span>';
+        };
+        
+        xhr.send(formData);
+    }
+
+    // 拖拽上传
+    let dragCounter = 0;
+
+    function showDragOverlay() {
+        document.getElementById('dragOverlay').classList.add('active');
+    }
+
+    function hideDragOverlay() {
+        document.getElementById('dragOverlay').classList.remove('active');
+    }
+
+    document.addEventListener('dragenter', function(e) {
+        e.preventDefault();
+        dragCounter++;
+        showDragOverlay();
+    });
+
+    document.addEventListener('dragover', function(e) {
+        e.preventDefault();
+    });
+
+    document.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter === 0) {
+            hideDragOverlay();
+        }
+    });
+
+    document.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dragCounter = 0;
+        hideDragOverlay();
+        
+        if (e.dataTransfer.files.length > 0) {
+            uploadFiles(e.dataTransfer.files);
+        }
+    });
+
+
+    // 图像查看器相关
+    // 获取CSS变量值
+    function getCSSVariable(name) {
+        const root = getComputedStyle(document.documentElement);
+        const value = root.getPropertyValue(name).trim();
+        return parseInt(value) || 0;
+    }
+    
+    // 全局变量
+    let viewerRenderedItems = new Map();
+    let viewerCols = 0;
+    const ITEM_WIDTH = getCSSVariable('--thumbnail-size');
+    const ITEM_HEIGHT = getCSSVariable('--thumbnail-size');
+    const GAP = getCSSVariable('--thumbnail-gap');
+    const MOVE_THRESHOLD = getCSSVariable('--move-threshold');
+    let rowHeight = ITEM_HEIGHT + GAP;
+    let viewerFilesList = [];
+    let debouncedHandleResize;
+    let debouncedHandleViewerScroll;
+    
+    // 图片查看器导航变量
+    let currentImageIndex = 0;
+    let touchStartY = 0;
+    let touchStartX = 0;
+    
+    function viewImages() {
+        // 创建图片查看器容器
+        const viewer = document.createElement('div');
+        viewer.id = 'image-viewer';
+        
+        // 创建关闭按钮
+        const closeBtn = document.createElement('span');
+        closeBtn.id = 'viewer-close';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.onclick = closeImageViewer;
+        
+        // 创建滚动容器
+        const scrollContainer = document.createElement('div');
+        scrollContainer.id = 'viewer-scroll-container';
+        
+        // 创建图片容器
+        const container = document.createElement('div');
+        container.id = 'viewer-container';
+        
+        // 创建虚拟元素用于计算滚动
+        const phantom = document.createElement('div');
+        phantom.id = 'viewer-phantom';
+        
+        container.appendChild(phantom);
+        scrollContainer.appendChild(container);
+        viewer.appendChild(closeBtn);
+        viewer.appendChild(scrollContainer);
+        document.body.appendChild(viewer);
+        document.body.style.overflow = 'hidden';
+        
+        // 初始化图片查看器
+        initImageViewer(imageData);
+        
+        // 添加窗口调整大小事件监听
+        debouncedHandleResize = debounce(handleResize, 100);
+        window.addEventListener('resize', debouncedHandleResize);
+        
+        // 添加键盘事件监听
+        document.addEventListener('keydown', handleImageViewerKeydown);
+        
+        // 添加触摸事件监听
+        document.addEventListener('touchstart', handleTouchStart, { passive: false });
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    }
+    
+    function closeImageViewer() {
+        const viewer = document.getElementById('image-viewer');
+        if (viewer) {
+            document.body.removeChild(viewer);
+            document.body.style.overflow = 'auto';
+            // 清理资源
+            viewerRenderedItems.forEach(value => {
+                if (value.wrap && value.wrap.parentNode) {
+                    value.wrap.parentNode.removeChild(value.wrap);
+                }
+            });
+            viewerRenderedItems.clear();
+            
+            // 移除事件监听器
+            if (debouncedHandleResize) {
+                window.removeEventListener('resize', debouncedHandleResize);
+            }
+            // 移除滚动事件监听器
+            const scrollContainer = document.getElementById('viewer-scroll-container');
+            if (debouncedHandleViewerScroll && scrollContainer) {
+                scrollContainer.removeEventListener('scroll', debouncedHandleViewerScroll);
+            }
+            
+            // 移除键盘和触摸事件监听
+            document.removeEventListener('keydown', handleImageViewerKeydown);
+            document.removeEventListener('touchstart', handleTouchStart);
+            document.removeEventListener('touchmove', handleTouchMove);
+        }
+    }
+    
+    function initImageViewer(images) {
+        viewerFilesList = images;
+        calculateViewerLayout();
+        updateViewerVisibleItems();
+        
+        // 添加滚动事件监听
+        const scrollContainer = document.getElementById('viewer-scroll-container');
+        debouncedHandleViewerScroll = debounce(handleViewerScroll, 50);
+        scrollContainer.addEventListener('scroll', debouncedHandleViewerScroll);
+        
+        // 添加点击事件打开大图
+        document.getElementById('viewer-container').addEventListener('click', function(e) {
+            const img = e.target.closest('.img-item');
+            if (img) {
+                const index = parseInt(img.parentElement.getAttribute('data-index'));
+                openModal(img.src, index);
+            }
+        });
+    }
+    
+    function calculateViewerLayout() {
+        const scrollContainer = document.getElementById('viewer-scroll-container');
+        const containerWidth = scrollContainer.clientWidth;
+        viewerCols = Math.max(1, Math.floor((containerWidth + GAP) / (ITEM_WIDTH + GAP)));
+
+        const totalRows = Math.ceil(viewerFilesList.length / viewerCols);
+        const totalHeight = totalRows * rowHeight - GAP;
+        document.getElementById('viewer-phantom').style.height = `${totalHeight}px`;
+    }
+
+    function updateViewerVisibleItems() {
+        const scrollContainer = document.getElementById('viewer-scroll-container');
+        const scrollTop = scrollContainer.scrollTop;
+        const clientHeight = scrollContainer.clientHeight;
+        const buffer = 3;
+
+        const startRow = Math.max(0, Math.floor(scrollTop / rowHeight) - buffer);
+        const endRow = Math.ceil((scrollTop + clientHeight) / rowHeight) + buffer;
+        const startIndex = Math.max(0, startRow * viewerCols);
+        const endIndex = Math.min(viewerFilesList.length, endRow * viewerCols);
+
+        // 移除不可见项
+        viewerRenderedItems.forEach((value, index) => {
+            if (index < startIndex || index >= endIndex) {
+                if (value.wrap && value.wrap.parentNode) {
+                    value.wrap.parentNode.removeChild(value.wrap);
+                }
+                viewerRenderedItems.delete(index);
+            }
+        });
+
+        // 添加/更新可见项
+        for (let i = startIndex; i < endIndex; i++) {
+            if (i >= viewerFilesList.length) break;
+
+            const col = i % viewerCols;
+            const row = Math.floor(i / viewerCols);
+            const left = col * (ITEM_WIDTH + GAP);
+            const top = row * rowHeight;
+
+            if (viewerRenderedItems.has(i)) {
+                const item = viewerRenderedItems.get(i);
+                item.wrap.style.left = `${left}px`;
+                item.wrap.style.top = `${top}px`;
+            } else {
+                const image = viewerFilesList[i];
+                const wrap = document.createElement('div');
+                wrap.className = 'img-wrap';
+                wrap.style.cssText = `left: ${left}px; top: ${top}px; width: ${ITEM_WIDTH}px; height: ${ITEM_HEIGHT}px;`;
+                wrap.setAttribute('data-index', i);
+
+                const img = document.createElement('img');
+                img.className = 'img-item';
+                img.src = image.url;
+                img.alt = image.name;
+                img.loading = 'lazy';
+
+                wrap.appendChild(img);
+                document.getElementById('viewer-container').appendChild(wrap);
+
+                viewerRenderedItems.set(i, { wrap, img });
+            }
+        }
+    }
+
+    function handleViewerScroll() {
+        updateViewerVisibleItems();
+    }
+    
+    function handleResize() {
+        calculateViewerLayout();
+        updateViewerVisibleItems();
+    }
+
+    function openModal(src, index) {
+        currentImageIndex = index;
+        document.getElementById('imageModal').classList.add('show');
+        document.getElementById('expandedImg').src = src;
+        document.title = viewerFilesList[currentImageIndex].name;
+        
+        // 添加键盘和触摸事件监听
+        document.addEventListener('keydown', handleModalKeydown);
+        document.getElementById('imageModal').addEventListener('touchstart', handleModalTouchStart, { passive: false });
+        document.getElementById('imageModal').addEventListener('touchmove', handleModalTouchMove, { passive: false });
+    }
+
+    function closeModal() {
+        document.title = title;
+        document.getElementById('imageModal').classList.remove('show');
+        
+        // 移除键盘和触摸事件监听
+        document.removeEventListener('keydown', handleModalKeydown);
+        document.getElementById('imageModal').removeEventListener('touchstart', handleModalTouchStart);
+        document.getElementById('imageModal').removeEventListener('touchmove', handleModalTouchMove);
+    }
+    
+    function showNextImage() {
+        if (currentImageIndex < viewerFilesList.length - 1) {
+            currentImageIndex++;
+            document.getElementById('expandedImg').src = viewerFilesList[currentImageIndex].url;
+            document.title = viewerFilesList[currentImageIndex].name;
+        }
+    }
+    
+    function showPrevImage() {
+        if (currentImageIndex > 0) {
+            currentImageIndex--;
+            document.getElementById('expandedImg').src = viewerFilesList[currentImageIndex].url;
+            document.title = viewerFilesList[currentImageIndex].name;
+        }
+    }
+    
+    function handleImageViewerKeydown(e) {
+        if (e.key === 'Escape') {
+            closeImageViewer();
+        }
+    }
+    
+    function handleModalKeydown(e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+            showNextImage();
+            e.preventDefault();
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+            showPrevImage();
+            e.preventDefault();
+        } else if (e.key === 'Escape') {
+            closeModal();
+        }
+    }
+    
+    function handleTouchStart(e) {
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+    }
+    
+    function handleTouchMove(e) {
+        if (!touchStartY) return;
+        
+        const touchY = e.touches[0].clientY;
+        const touchX = e.touches[0].clientX;
+        const diffY = touchY - touchStartY;
+        const diffX = touchX - touchStartX;
+        
+        // 如果是水平滑动，阻止默认行为（防止页面滚动）
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            e.preventDefault();
+        }
+    }
+    
+    function handleModalTouchStart(e) {
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+    }
+    
+    function handleModalTouchMove(e) {
+        if (!touchStartY) return;
+        
+        const touchY = e.touches[0].clientY;
+        const touchX = e.touches[0].clientX;
+        const diffY = touchY - touchStartY;
+        const diffX = touchX - touchStartX;
+        
+        // 如果是垂直滑动，切换图片
+        if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > MOVE_THRESHOLD) {
+            e.preventDefault();
+            if (diffY > 0) {
+                // 向下滑动，显示上一张
+                showPrevImage();
+            } else {
+                // 向上滑动，显示下一张
+                showNextImage();
+            }
+            touchStartY = 0;
+        }
+    }
+    
+    // 防抖函数
+    function debounce(func, delay = 100) {
+        let timeoutId;
+        return function(...args) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+    
+    // 模态框背景点击关闭
+    document.getElementById('imageModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+
+
+    // 媒体播放器相关
+    let currentMediaType = '';
+    let currentMediaIndex = 0;
+    let mediaList = [];
+    let isPlaying = false;
+    let isMuted = false;
+    let isPlaylistVisible = false;
+    // 添加自动播放下一首的变量
+    let autoPlayNext = true;
+    
+    // 触摸事件变量
+    let mediaTouchStartY = 0;
+    let mediaTouchStartX = 0;
+
+    function viewVideos() {
+        openMediaPlayer('video', videoData);
+    }
+    function viewAudios() {
+        openMediaPlayer('audio', audioData);
+    }
+    function openMediaPlayer(type, mediaData) {
+        currentMediaType = type;
+        mediaList = mediaData;
+        currentMediaIndex = 0;
+        const player = document.getElementById('mediaPlayer');
+        player.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        // 隐藏播放列表
+        const playlist = document.getElementById('mediaPlaylist');
+        playlist.classList.remove('show');
+        const toggleBtn = document.getElementById('playlistToggleBtn');
+        toggleBtn.textContent = '显示播放列表';
+        isPlaylistVisible = false;
+        // 设置播放器
+        const videoPlayer = document.getElementById('videoPlayer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        if (type === 'video') {
+            videoPlayer.style.display = 'block';
+            audioPlayer.style.display = 'none';
+            loadMedia(videoPlayer, 0);
+        } else {
+            videoPlayer.style.display = 'none';
+            audioPlayer.style.display = 'block';
+            loadMedia(audioPlayer, 0);
+        }
+        setupMediaEvents();
+        
+        // 添加键盘和触摸事件监听
+        document.addEventListener('keydown', handleMediaKeydown);
+        player.addEventListener('touchstart', handleMediaTouchStart, { passive: false });
+        player.addEventListener('touchmove', handleMediaTouchMove, { passive: false });
+    }
+    function closeMediaPlayer() {
+        document.title = title;
+        const player = document.getElementById('mediaPlayer');
+        player.classList.remove('show');
+        document.body.style.overflow = 'auto';
+        const videoPlayer = document.getElementById('videoPlayer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        videoPlayer.pause();
+        audioPlayer.pause();
+        // 移除结束事件监听
+        videoPlayer.onended = null;
+        audioPlayer.onended = null;
+        videoPlayer.onloadedmetadata = null;
+        videoPlayer.ontimeupdate = null;
+        audioPlayer.onloadedmetadata = null;
+        audioPlayer.ontimeupdate = null;
+        
+        // 移除键盘和触摸事件监听
+        document.removeEventListener('keydown', handleMediaKeydown);
+        player.removeEventListener('touchstart', handleMediaTouchStart);
+        player.removeEventListener('touchmove', handleMediaTouchMove);
+    }
+    // 修改：切换播放列表
+    function togglePlaylist() {
+        const playlist = document.getElementById('mediaPlaylist');
+        const toggleBtn = document.getElementById('playlistToggleBtn');
+        if (isPlaylistVisible) {
+            playlist.classList.remove('show');
+            toggleBtn.textContent = '显示播放列表';
+        } else {
+            // 如果是第一次显示，先渲染
+            if (playlist.children.length === 0) {
+                renderPlaylist();
+            }
+            playlist.classList.add('show');
+            toggleBtn.textContent = '隐藏播放列表';
+        }
+        isPlaylistVisible = !isPlaylistVisible;
+    }
+    // 在媒体播放器容器显示时，添加全局点击监听
+    document.addEventListener('click', function(event) {
+        const playlist = document.getElementById('mediaPlaylist');
+        const toggleBtn = document.getElementById('playlistToggleBtn');
+        const mediaPlayer = document.getElementById('mediaPlayer');
+        
+        // 只有当播放列表可见时才进行检查
+        if (isPlaylistVisible && mediaPlayer.classList.contains('show')) {
+            // 检查点击的目标是否在播放列表内部或在切换按钮上
+            const isClickInsidePlaylist = playlist && playlist.contains(event.target);
+            const isClickOnToggleBtn = toggleBtn && toggleBtn.contains(event.target);
+            
+            // 如果点击在播放列表外部且不在切换按钮上，则隐藏
+            if (!isClickInsidePlaylist && !isClickOnToggleBtn) {
+                togglePlaylist(); // 复用已有的切换函数
+            }
+        }
+    });
+    function renderPlaylist() {
+        const playlist = document.getElementById('mediaPlaylist');
+        playlist.innerHTML = '';
+        mediaList.forEach((media, index) => {
+            const item = document.createElement('div');
+            item.className = 'media-playlist-item';
+            if (index === currentMediaIndex) {
+                item.classList.add('active');
+            }
+            // 创建名称元素
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = media.name;
+            nameSpan.style.flex = '1';
+            nameSpan.style.overflow = 'hidden';
+            nameSpan.style.textOverflow = 'ellipsis';
+            nameSpan.style.whiteSpace = 'nowrap';
+
+            // 创建大小元素
+            const sizeSpan = document.createElement('span');
+            sizeSpan.textContent = formatSize(media.size);
+            sizeSpan.style.marginLeft = '10px';
+            sizeSpan.style.flexShrink = '0';
+            sizeSpan.style.color = 'var(--color-gray-subtext)';
+            sizeSpan.style.fontSize = '0.9em';
+
+            item.appendChild(nameSpan);
+            item.appendChild(sizeSpan);
+
+            item.onclick = () => {
+                loadMedia(
+                    currentMediaType === 'video' 
+                        ? document.getElementById('videoPlayer') 
+                        : document.getElementById('audioPlayer'),
+                    index
+                );
+                // 点击后自动隐藏播放列表
+                togglePlaylist();
+            };
+            playlist.appendChild(item);
+        });
+    }
+    function loadMedia(player, index) {
+        currentMediaIndex = index;
+        player.src = mediaList[index].url;
+        player.load();
+        document.getElementById('mediaTitle').textContent = mediaList[index].name;
+        document.title = mediaList[index].name;
+        renderPlaylist();
+        
+        // 设置结束事件监听，用于自动播放下一个
+        player.onended = function() {
+            if (autoPlayNext && currentMediaIndex < mediaList.length - 1) {
+                playNextMedia();
+            }
+        };
+        
+        player.play().catch(e => {
+            console.log('Autoplay prevented:', e);
+        });
+    }
+    function setupMediaEvents() {
+        const videoPlayer = document.getElementById('videoPlayer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const player = currentMediaType === 'video' ? videoPlayer : audioPlayer;
+        document.getElementById('playlistToggleBtn').onclick = togglePlaylist;
+        
+        // 设置连播复选框事件
+        const continuousPlayCheckbox = document.getElementById('continuousPlayCheckbox');
+        continuousPlayCheckbox.checked = autoPlayNext;
+        continuousPlayCheckbox.onchange = function() {
+            autoPlayNext = this.checked;
+        };
+        
+        // 确保为当前播放器设置结束事件
+        player.onended = function() {
+            if (autoPlayNext && currentMediaIndex < mediaList.length - 1) {
+                playNextMedia();
+            }
+        };
+    }
+    
+    function playNextMedia() {
+        if (currentMediaIndex < mediaList.length - 1) {
+            loadMedia(
+                currentMediaType === 'video' 
+                    ? document.getElementById('videoPlayer') 
+                    : document.getElementById('audioPlayer'),
+                currentMediaIndex + 1
+            );
+        }
+    }
+    
+    function playPrevMedia() {
+        if (currentMediaIndex > 0) {
+            loadMedia(
+                currentMediaType === 'video' 
+                    ? document.getElementById('videoPlayer') 
+                    : document.getElementById('audioPlayer'),
+                currentMediaIndex - 1
+            );
+        }
+    }
+    
+    function handleMediaKeydown(e) {
+        if (e.key === 'ArrowDown') {
+            playNextMedia();
+            e.preventDefault();
+        } else if (e.key === 'ArrowUp') {
+            playPrevMedia();
+            e.preventDefault();
+        } else if (e.key === 'Escape') {
+            closeMediaPlayer();
+        }
+    }
+    
+    function handleMediaTouchStart(e) {
+        mediaTouchStartY = e.touches[0].clientY;
+        mediaTouchStartX = e.touches[0].clientX;
+    }
+    
+    function handleMediaTouchMove(e) {
+        if (isPlaylistVisible) return;
+        if (!mediaTouchStartY) return;
+        
+        const touchY = e.touches[0].clientY;
+        const touchX = e.touches[0].clientX;
+        const diffY = touchY - mediaTouchStartY;
+        const diffX = touchX - mediaTouchStartX;
+        
+        // 如果是垂直滑动，切换媒体
+        if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > MOVE_THRESHOLD) {
+            e.preventDefault();
+            if (diffY > 0) {
+                // 向下滑动，显示上一个
+                playPrevMedia();
+            } else {
+                // 向上滑动，显示下一个
+                playNextMedia();
+            }
+            mediaTouchStartY = 0;
+        }
+    }
+    
+    function formatTime(seconds) {
+        if (isNaN(seconds)) return '0:00';
+        const minutes = Math.floor(seconds / 60);
+        seconds = Math.floor(seconds % 60);
+        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+    function formatSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+
+    // 文本查看器相关
+    let currentTextIndex = 0;
+    let textList = [];
+    let isTextWrapEnabled = true;
+    let isTextListVisible = false;
+
+    function viewTexts() {
+        openTextViewer(textData);
+    }
+
+    function openTextViewer(textData) {
+        textList = textData;
+        currentTextIndex = 0;
+        const viewer = document.getElementById('textViewer');
+        viewer.classList.add('show');
+        document.body.style.overflow = 'hidden';
+
+        // 加载第一个文本文件
+        loadText(0);
+
+        // 添加键盘事件监听
+        document.addEventListener('keydown', handleTextKeydown);
+        
+        // 添加全局点击监听，用于关闭列表
+        document.addEventListener('click', handleGlobalClick);
+    }
+
+    function closeTextViewer() {
+        document.title = title;
+        const viewer = document.getElementById('textViewer');
+        viewer.classList.remove('show');
+        document.body.style.overflow = 'auto';
+
+        // 移除键盘事件监听
+        document.removeEventListener('keydown', handleTextKeydown);
+        document.removeEventListener('click', handleGlobalClick);
+        
+        // 隐藏列表
+        hideTextList();
+    }
+
+    function loadText(index) {
+        if (index < 0 || index >= textList.length) return;
+
+        currentTextIndex = index;
+        const textFile = textList[index];
+
+        // 更新标题
+        document.title = textFile.name;
+        document.getElementById('textTitle').textContent = textFile.name;
+
+        // 显示加载中
+        document.getElementById('textContent').textContent = '加载中...';
+
+        // 获取文本内容
+        fetch(textFile.url)
+            .then(response => {
+                if (!response.ok) throw new Error('网络响应不正常');
+                return response.text();
+            })
+            .then(text => {
+                // 设置文本内容并高亮
+                const codeElement = document.getElementById('textContent');
+                codeElement.textContent = text;
+
+                // 应用高亮
+                hljs.highlightElement(codeElement);
+
+                // 应用换行设置
+                applyTextWrap();
+            })
+            .catch(error => {
+                document.getElementById('textContent').textContent = '加载失败: ' + error.message;
+            });
+    }
+
+    function showNextText() {
+        if (currentTextIndex < textList.length - 1) {
+            loadText(currentTextIndex + 1);
+        }
+    }
+
+    function showPrevText() {
+        if (currentTextIndex > 0) {
+            loadText(currentTextIndex - 1);
+        }
+    }
+
+    function toggleTextWrap() {
+        isTextWrapEnabled = !isTextWrapEnabled;
+        applyTextWrap();
+
+        // 更新按钮文本
+        // document.getElementById('textWrapToggle').textContent =
+        //    isTextWrapEnabled ? '禁用换行' : '自动换行';
+    }
+
+    function toggleTextList() {
+        const playlist = document.getElementById('textPlaylist');
+        const toggleBtn = document.getElementById('textListToggle');
+        
+        if (isTextListVisible) {
+            hideTextList();
+            toggleBtn.textContent = '显示列表';
+        } else {
+            renderTextList();
+            playlist.classList.add('show');
+            toggleBtn.textContent = '隐藏列表';
+        }
+        
+        isTextListVisible = !isTextListVisible;
+    }
+    
+    function hideTextList() {
+        const playlist = document.getElementById('textPlaylist');
+        const toggleBtn = document.getElementById('textListToggle');
+        
+        playlist.classList.remove('show');
+        toggleBtn.textContent = '显示列表';
+        isTextListVisible = false;
+    }
+
+    function renderTextList() {
+        const playlist = document.getElementById('textPlaylist');
+        playlist.innerHTML = '';
+        
+        textList.forEach((textFile, index) => {
+            const item = document.createElement('div');
+            item.className = 'text-playlist-item';
+            if (index === currentTextIndex) {
+                item.classList.add('active');
+            }
+            
+            // 创建名称元素
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = textFile.name;
+            nameSpan.style.flex = '1';
+            nameSpan.style.overflow = 'hidden';
+            nameSpan.style.textOverflow = 'ellipsis';
+            nameSpan.style.whiteSpace = 'nowrap';
+
+            // 创建大小元素
+            const sizeSpan = document.createElement('span');
+            sizeSpan.textContent = formatSize(textFile.size);
+            sizeSpan.style.marginLeft = '10px';
+            sizeSpan.style.flexShrink = '0';
+            sizeSpan.style.color = 'var(--color-gray-subtext)';
+            sizeSpan.style.fontSize = '0.9em';
+
+            item.appendChild(nameSpan);
+            item.appendChild(sizeSpan);
+
+            item.onclick = () => {
+                loadText(index);
+                // 点击后自动隐藏列表
+                hideTextList();
+            };
+            playlist.appendChild(item);
+        });
+    }
+
+    function applyTextWrap() {
+        const codeElement = document.getElementById('textContent');
+        if (isTextWrapEnabled) {
+            codeElement.style.whiteSpace = 'pre-wrap';
+            codeElement.style.wordBreak = 'break-word';
+        } else {
+            codeElement.style.whiteSpace = 'pre';
+            codeElement.style.wordBreak = 'normal';
+        }
+    }
+
+    function copyTextContent() {
+        const textContent = document.getElementById('textContent').textContent;
+        navigator.clipboard.writeText(textContent)
+            .then(() => {
+                alert('内容已复制到剪贴板');
+            })
+            .catch(err => {
+                console.error('复制失败:', err);
+            });
+    }
+
+    function handleTextKeydown(e) {
+        if (e.key === 'ArrowRight') {
+            showNextText();
+            e.preventDefault();
+        } else if (e.key === 'ArrowLeft') {
+            showPrevText();
+            e.preventDefault();
+        } else if (e.key === 'Escape') {
+            closeTextViewer();
+        }
+    }
+    
+    function handleGlobalClick(e) {
+        const playlist = document.getElementById('textPlaylist');
+        const toggleBtn = document.getElementById('textListToggle');
+        
+        // 只有当列表可见时才进行检查
+        if (isTextListVisible) {
+            // 检查点击的目标是否在列表内部或在切换按钮上
+            const isClickInsidePlaylist = playlist && playlist.contains(e.target);
+            const isClickOnToggleBtn = toggleBtn && toggleBtn.contains(e.target);
+            
+            // 如果点击在列表外部且不在切换按钮上，则隐藏列表
+            if (!isClickInsidePlaylist && !isClickOnToggleBtn) {
+                hideTextList();
+            }
+        }
+    }
+
+    function formatSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // 添加Edge特定的滚动事件处理
+    if (navigator.userAgent.includes('Edge')) {
+        document.addEventListener('DOMContentLoaded', function() {
+            const textContent = document.getElementById('textContent');
+            if (textContent) {
+                // 确保代码块可以滚动
+                textContent.style.overflow = 'auto';
+                textContent.style.maxHeight = 'none';
+                
+                // 添加触摸事件支持
+                textContent.addEventListener('touchstart', function(e) {
+                    this.startY = e.touches[0].clientY;
+                }, { passive: true });
+                
+                textContent.addEventListener('touchmove', function(e) {
+                    if (!this.startY) return;
+                    
+                    const touchY = e.touches[0].clientY;
+                    const diffY = this.startY - touchY;
+                    
+                    if (Math.abs(diffY) > 10) {
+                        this.scrollTop += diffY;
+                        this.startY = touchY;
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+        });
+    }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 """
 
 
@@ -1385,7 +2431,8 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             '<meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width, initial-scale=1">',
             f"<title>{title}</title>",
-            f"<style>{CSS_STYLES}</style>",
+            f"{CSS_STYLES}",
+            """<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAyNCIgaGVpZ2h0PSIxMDI0IiB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik05NzAuNjY2NjY3IDIxMy4zMzMzMzNINTQ2LjU4NjY2N2ExMC41NzMzMzMgMTAuNTczMzMzIDAgMCAxLTcuNTQtMy4xMjY2NjZMNDE5Ljc5MzMzMyAxMDAuOTUzMzMzQTUyLjk4NjY2NyA1Mi45ODY2NjcgMCAwIDAgMzkyLjA4IDg1LjMzMzMzM0g5NmE1My4zOTMzMzMgNTMuMzkzMzMzIDAgMCAwLTUzLjMzMzMzMyA1My4zMzMzMzR2NzA0YTUzLjM5MzMzMyA1My4zOTMzMzMgMCAwIDAgNTMuMzMzMzMzIDUzLjMzMzMzM2g4NzQuNjY2NjY3YTUzLjM5MzMzMyA1My4zOTMzMzMgMCAwIDAgNTMuMzMzMzMzLTUzLjMzMzMzM1YyNjYuNjY2NjY3YTUzLjM5MzMzMyA1My4zOTMzMzMgMCAwIDAtNTMuMzMzMzMzLTUzLjMzMzMzNHogbTEwLjY2NjY2NiA2MjkuMzMzMzM0YTEwLjY2NjY2NyAxMC42NjY2NjcgMCAwIDEtMTAuNjY2NjY2IDEwLjY2NjY2Nkg5NmExMC42NjY2NjcgMTAuNjY2NjY3IDAgMCAxLTEwLjY2NjY2Ny0xMC42NjY2NjZWMTM4LjY2NjY2N2ExMC42NjY2NjcgMTAuNjY2NjY3IDAgMCAxIDEwLjY2NjY2Ny0xMC42NjY2NjdoMjk2LjA4YTEwLjU3MzMzMyAxMC41NzMzMzMgMCAwIDEgNy41NCAzLjEyNjY2N2wxMDkuMjUzMzMzIDEwOS4yNTMzMzNBNTIuOTg2NjY3IDUyLjk4NjY2NyAwIDAgMCA1NDYuNTg2NjY3IDI1Nkg5NzAuNjY2NjY3YTEwLjY2NjY2NyAxMC42NjY2NjcgMCAwIDEgMTAuNjY2NjY2IDEwLjY2NjY2N3pNNjQwIDM0MS4zMzMzMzNhODUuMzMzMzMzIDg1LjMzMzMzMyAwIDAgMC04MS44MjY2NjcgMTA5LjU1MzMzNGwtNzEuNjczMzMzIDQzYTg1LjMzMzMzMyA4NS4zMzMzMzMgMCAxIDAtNi41NjY2NjcgMTI3LjM5MzMzM2wzOC41MDY2NjcgMjguODhhODUuNTI2NjY3IDg1LjUyNjY2NyAwIDEgMCAyNS42MjY2NjctMzQuMTA2NjY3bC0zOC41MDY2NjctMjguODhhODUuMzMzMzMzIDg1LjMzMzMzMyAwIDAgMCAyLjkzMzMzMy01Ni43MjY2NjZsNzEuNjczMzM0LTQzQTg1LjMzMzMzMyA4NS4zMzMzMzMgMCAxIDAgNjQwIDM0MS4zMzMzMzN6TTQyNi42NjY2NjcgNTk3LjMzMzMzM2E0Mi42NjY2NjcgNDIuNjY2NjY3IDAgMSAxIDQyLjY2NjY2Ni00Mi42NjY2NjYgNDIuNzEzMzMzIDQyLjcxMzMzMyAwIDAgMS00Mi42NjY2NjYgNDIuNjY2NjY2eiBtMTcwLjY2NjY2NiA0Mi42NjY2NjdhNDIuNjY2NjY3IDQyLjY2NjY2NyAwIDEgMS00Mi42NjY2NjYgNDIuNjY2NjY3IDQyLjcxMzMzMyA0Mi43MTMzMzMgMCAwIDEgNDIuNjY2NjY2LTQyLjY2NjY2N3ogbTQyLjY2NjY2Ny0xNzAuNjY2NjY3YTQyLjY2NjY2NyA0Mi42NjY2NjcgMCAxIDEgNDIuNjY2NjY3LTQyLjY2NjY2NiA0Mi43MTMzMzMgNDIuNzEzMzMzIDAgMCAxLTQyLjY2NjY2NyA0Mi42NjY2NjZ6IiBmaWxsPSIjNUM1QzY2IiAvPjwvc3ZnPg=="/>""",
             "</head>",
             "<body>",
             '<div class="container">',
@@ -1501,6 +2548,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
         html_parts.append(self._generate_text_viewer_html())
 
         html_parts.append("</div>")  # 关闭container
+        html_parts.append(self._generate_js_scripts())  # JavaScript脚本
         html_parts.append("</body></html>")
 
         return "".join(html_parts)
@@ -1609,1042 +2657,24 @@ class FileServerHandler(SimpleHTTPRequestHandler):
         return file_list_html
 
     def _upload_file(self):
-        return """
-        <div class="upload-container">
-            <button class="view-btn" onclick="openFileDialog()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
-            </svg>上传</button>
-            <input type="file" id="fileInput" style="display:none" multiple>
-            <div class="upload-progress" id="uploadProgress"></div>
-            <div class="drag-overlay" id="dragOverlay">
-                <div class="drag-message">拖放到此处上传</div>
-            </div>
-        </div>
-        <script>
-        let uploads = {};
-        
-        function openFileDialog() {
-            document.getElementById('fileInput').click();
-        }
-        
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            uploadFiles(e.target.files);
-        });
-        
-        function uploadFiles(files) {
-            const progressContainer = document.getElementById("uploadProgress");
-            progressContainer.style.display = "block";
-            
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const fileId = Date.now() + '-' + i;
-                
-                // 添加上传项目到界面
-                const progressItem = document.createElement('div');
-                progressItem.className = 'progress-item';
-                progressItem.id = 'progress-' + fileId;
-                
-                const fileName = document.createElement('div');
-                fileName.className = 'progress-filename';
-                fileName.textContent = file.name;
-                
-                const progressBarContainer = document.createElement('div');
-                progressBarContainer.className = 'progress-bar-container';
-                
-                const progressBar = document.createElement('div');
-                progressBar.className = 'progress-bar-fill';
-                progressBar.style.width = '0%';
-                
-                progressBarContainer.appendChild(progressBar);
-                progressItem.appendChild(fileName);
-                progressItem.appendChild(progressBarContainer);
-                progressContainer.appendChild(progressItem);
-                
-                // 开始上传
-                uploadFile(file, fileId);
-            }
-        }
-        
-        function uploadFile(file, fileId) {
-            uploads[fileId] = {
-                file: file,
-                loaded: 0,
-                total: file.size
-            };
-            
-            const formData = new FormData();
-            formData.append("file", file);
-            
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", "/upload?path=" + encodeURIComponent(window.location.pathname));
-            
-            xhr.upload.onprogress = function(e) {
-                if (e.lengthComputable) {
-                    const progress = (e.loaded / e.total) * 100;
-                    document.querySelector('#progress-' + fileId + ' .progress-bar-fill').style.width = progress + '%';
-                    uploads[fileId].loaded = e.loaded;
-                }
-            };
-            
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    document.querySelector('#progress-' + fileId + ' .progress-bar-fill').style.background = 'var(--color-success)';
-                    setTimeout(() => {
-                        document.getElementById('progress-' + fileId).remove();
-                        if (document.getElementById('uploadProgress').children.length === 0) {
-                            document.getElementById('uploadProgress').style.display = 'none';
-                            location.reload();
-                        }
-                    }, 1000);
-                } else {
-                    document.querySelector('#progress-' + fileId + ' .progress-bar-fill').style.background = 'var(--color-error)';
-                    document.querySelector('#progress-' + fileId + ' .progress-filename').innerHTML += 
-                        ' <span style="color:var(--color-error)">(上传失败)</span>';
-                }
-            };
-            
-            xhr.onerror = function() {
-                document.querySelector('#progress-' + fileId + ' .progress-bar-fill').style.background = 'var(--color-error)';
-                document.querySelector('#progress-' + fileId + ' .progress-filename').innerHTML += 
-                    ' <span style="color:var(--color-error)">(网络错误)</span>';
-            };
-            
-            xhr.send(formData);
-        }
-        
-        // 拖拽上传
-        let dragCounter = 0;
-        
-        function showDragOverlay() {
-            document.getElementById('dragOverlay').classList.add('active');
-        }
-        
-        function hideDragOverlay() {
-            document.getElementById('dragOverlay').classList.remove('active');
-        }
-        
-        document.addEventListener('dragenter', function(e) {
-            e.preventDefault();
-            dragCounter++;
-            showDragOverlay();
-        });
-        
-        document.addEventListener('dragover', function(e) {
-            e.preventDefault();
-        });
-        
-        document.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            dragCounter--;
-            if (dragCounter === 0) {
-                hideDragOverlay();
-            }
-        });
-        
-        document.addEventListener('drop', function(e) {
-            e.preventDefault();
-            dragCounter = 0;
-            hideDragOverlay();
-            
-            if (e.dataTransfer.files.length > 0) {
-                uploadFiles(e.dataTransfer.files);
-            }
-        });
-        </script>
-        """
+        """生成上传文件按钮和相关HTML"""
+        return UPLOAD_FILE_HTML
 
     def _generate_image_viewer_html(self):
         """生成图片查看器HTML和JavaScript"""
-        return """
-        <div id="imageModal" class="modal">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <img class="modal-content" id="expandedImg">
-        </div>
-
-        <script>
-            // 获取CSS变量值
-            function getCSSVariable(name) {
-                const root = getComputedStyle(document.documentElement);
-                const value = root.getPropertyValue(name).trim();
-                return parseInt(value) || 0;
-            }
-            
-            // 全局变量
-            let viewerRenderedItems = new Map();
-            let viewerCols = 0;
-            const ITEM_WIDTH = getCSSVariable('--thumbnail-size');
-            const ITEM_HEIGHT = getCSSVariable('--thumbnail-size');
-            const GAP = getCSSVariable('--thumbnail-gap');
-            const MOVE_THRESHOLD = getCSSVariable('--move-threshold');
-            let rowHeight = ITEM_HEIGHT + GAP;
-            let viewerFilesList = [];
-            let debouncedHandleResize;
-            let debouncedHandleViewerScroll;
-            
-            // 图片查看器导航变量
-            let currentImageIndex = 0;
-            let touchStartY = 0;
-            let touchStartX = 0;
-            
-            function viewImages() {
-                // 创建图片查看器容器
-                const viewer = document.createElement('div');
-                viewer.id = 'image-viewer';
-                
-                // 创建关闭按钮
-                const closeBtn = document.createElement('span');
-                closeBtn.id = 'viewer-close';
-                closeBtn.innerHTML = '&times;';
-                closeBtn.onclick = closeImageViewer;
-                
-                // 创建滚动容器
-                const scrollContainer = document.createElement('div');
-                scrollContainer.id = 'viewer-scroll-container';
-                
-                // 创建图片容器
-                const container = document.createElement('div');
-                container.id = 'viewer-container';
-                
-                // 创建虚拟元素用于计算滚动
-                const phantom = document.createElement('div');
-                phantom.id = 'viewer-phantom';
-                
-                container.appendChild(phantom);
-                scrollContainer.appendChild(container);
-                viewer.appendChild(closeBtn);
-                viewer.appendChild(scrollContainer);
-                document.body.appendChild(viewer);
-                document.body.style.overflow = 'hidden';
-                
-                // 初始化图片查看器
-                initImageViewer(imageData);
-                
-                // 添加窗口调整大小事件监听
-                debouncedHandleResize = debounce(handleResize, 100);
-                window.addEventListener('resize', debouncedHandleResize);
-                
-                // 添加键盘事件监听
-                document.addEventListener('keydown', handleImageViewerKeydown);
-                
-                // 添加触摸事件监听
-                document.addEventListener('touchstart', handleTouchStart, { passive: false });
-                document.addEventListener('touchmove', handleTouchMove, { passive: false });
-            }
-            
-            function closeImageViewer() {
-                const viewer = document.getElementById('image-viewer');
-                if (viewer) {
-                    document.body.removeChild(viewer);
-                    document.body.style.overflow = 'auto';
-                    // 清理资源
-                    viewerRenderedItems.forEach(value => {
-                        if (value.wrap && value.wrap.parentNode) {
-                            value.wrap.parentNode.removeChild(value.wrap);
-                        }
-                    });
-                    viewerRenderedItems.clear();
-                    
-                    // 移除事件监听器
-                    if (debouncedHandleResize) {
-                        window.removeEventListener('resize', debouncedHandleResize);
-                    }
-                    // 移除滚动事件监听器
-                    const scrollContainer = document.getElementById('viewer-scroll-container');
-                    if (debouncedHandleViewerScroll && scrollContainer) {
-                        scrollContainer.removeEventListener('scroll', debouncedHandleViewerScroll);
-                    }
-                    
-                    // 移除键盘和触摸事件监听
-                    document.removeEventListener('keydown', handleImageViewerKeydown);
-                    document.removeEventListener('touchstart', handleTouchStart);
-                    document.removeEventListener('touchmove', handleTouchMove);
-                }
-            }
-            
-            function initImageViewer(images) {
-                viewerFilesList = images;
-                calculateViewerLayout();
-                updateViewerVisibleItems();
-                
-                // 添加滚动事件监听
-                const scrollContainer = document.getElementById('viewer-scroll-container');
-                debouncedHandleViewerScroll = debounce(handleViewerScroll, 50);
-                scrollContainer.addEventListener('scroll', debouncedHandleViewerScroll);
-                
-                // 添加点击事件打开大图
-                document.getElementById('viewer-container').addEventListener('click', function(e) {
-                    const img = e.target.closest('.img-item');
-                    if (img) {
-                        const index = parseInt(img.parentElement.getAttribute('data-index'));
-                        openModal(img.src, index);
-                    }
-                });
-            }
-            
-            function calculateViewerLayout() {
-                const scrollContainer = document.getElementById('viewer-scroll-container');
-                const containerWidth = scrollContainer.clientWidth;
-                viewerCols = Math.max(1, Math.floor((containerWidth + GAP) / (ITEM_WIDTH + GAP)));
-
-                const totalRows = Math.ceil(viewerFilesList.length / viewerCols);
-                const totalHeight = totalRows * rowHeight - GAP;
-                document.getElementById('viewer-phantom').style.height = `${totalHeight}px`;
-            }
-
-            function updateViewerVisibleItems() {
-                const scrollContainer = document.getElementById('viewer-scroll-container');
-                const scrollTop = scrollContainer.scrollTop;
-                const clientHeight = scrollContainer.clientHeight;
-                const buffer = 3;
-
-                const startRow = Math.max(0, Math.floor(scrollTop / rowHeight) - buffer);
-                const endRow = Math.ceil((scrollTop + clientHeight) / rowHeight) + buffer;
-                const startIndex = Math.max(0, startRow * viewerCols);
-                const endIndex = Math.min(viewerFilesList.length, endRow * viewerCols);
-
-                // 移除不可见项
-                viewerRenderedItems.forEach((value, index) => {
-                    if (index < startIndex || index >= endIndex) {
-                        if (value.wrap && value.wrap.parentNode) {
-                            value.wrap.parentNode.removeChild(value.wrap);
-                        }
-                        viewerRenderedItems.delete(index);
-                    }
-                });
-
-                // 添加/更新可见项
-                for (let i = startIndex; i < endIndex; i++) {
-                    if (i >= viewerFilesList.length) break;
-
-                    const col = i % viewerCols;
-                    const row = Math.floor(i / viewerCols);
-                    const left = col * (ITEM_WIDTH + GAP);
-                    const top = row * rowHeight;
-
-                    if (viewerRenderedItems.has(i)) {
-                        const item = viewerRenderedItems.get(i);
-                        item.wrap.style.left = `${left}px`;
-                        item.wrap.style.top = `${top}px`;
-                    } else {
-                        const image = viewerFilesList[i];
-                        const wrap = document.createElement('div');
-                        wrap.className = 'img-wrap';
-                        wrap.style.cssText = `left: ${left}px; top: ${top}px; width: ${ITEM_WIDTH}px; height: ${ITEM_HEIGHT}px;`;
-                        wrap.setAttribute('data-index', i);
-
-                        const img = document.createElement('img');
-                        img.className = 'img-item';
-                        img.src = image.url;
-                        img.alt = image.name;
-                        img.loading = 'lazy';
-
-                        wrap.appendChild(img);
-                        document.getElementById('viewer-container').appendChild(wrap);
-
-                        viewerRenderedItems.set(i, { wrap, img });
-                    }
-                }
-            }
-
-            function handleViewerScroll() {
-                updateViewerVisibleItems();
-            }
-            
-            function handleResize() {
-                calculateViewerLayout();
-                updateViewerVisibleItems();
-            }
-
-            function openModal(src, index) {
-                currentImageIndex = index;
-                document.getElementById('imageModal').classList.add('show');
-                document.getElementById('expandedImg').src = src;
-                document.title = viewerFilesList[currentImageIndex].name;
-                
-                // 添加键盘和触摸事件监听
-                document.addEventListener('keydown', handleModalKeydown);
-                document.getElementById('imageModal').addEventListener('touchstart', handleModalTouchStart, { passive: false });
-                document.getElementById('imageModal').addEventListener('touchmove', handleModalTouchMove, { passive: false });
-            }
-
-            function closeModal() {
-                document.title = title;
-                document.getElementById('imageModal').classList.remove('show');
-                
-                // 移除键盘和触摸事件监听
-                document.removeEventListener('keydown', handleModalKeydown);
-                document.getElementById('imageModal').removeEventListener('touchstart', handleModalTouchStart);
-                document.getElementById('imageModal').removeEventListener('touchmove', handleModalTouchMove);
-            }
-            
-            function showNextImage() {
-                if (currentImageIndex < viewerFilesList.length - 1) {
-                    currentImageIndex++;
-                    document.getElementById('expandedImg').src = viewerFilesList[currentImageIndex].url;
-                    document.title = viewerFilesList[currentImageIndex].name;
-                }
-            }
-            
-            function showPrevImage() {
-                if (currentImageIndex > 0) {
-                    currentImageIndex--;
-                    document.getElementById('expandedImg').src = viewerFilesList[currentImageIndex].url;
-                    document.title = viewerFilesList[currentImageIndex].name;
-                }
-            }
-            
-            function handleImageViewerKeydown(e) {
-                if (e.key === 'Escape') {
-                    closeImageViewer();
-                }
-            }
-            
-            function handleModalKeydown(e) {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-                    showNextImage();
-                    e.preventDefault();
-                } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-                    showPrevImage();
-                    e.preventDefault();
-                } else if (e.key === 'Escape') {
-                    closeModal();
-                }
-            }
-            
-            function handleTouchStart(e) {
-                touchStartY = e.touches[0].clientY;
-                touchStartX = e.touches[0].clientX;
-            }
-            
-            function handleTouchMove(e) {
-                if (!touchStartY) return;
-                
-                const touchY = e.touches[0].clientY;
-                const touchX = e.touches[0].clientX;
-                const diffY = touchY - touchStartY;
-                const diffX = touchX - touchStartX;
-                
-                // 如果是水平滑动，阻止默认行为（防止页面滚动）
-                if (Math.abs(diffX) > Math.abs(diffY)) {
-                    e.preventDefault();
-                }
-            }
-            
-            function handleModalTouchStart(e) {
-                touchStartY = e.touches[0].clientY;
-                touchStartX = e.touches[0].clientX;
-            }
-            
-            function handleModalTouchMove(e) {
-                if (!touchStartY) return;
-                
-                const touchY = e.touches[0].clientY;
-                const touchX = e.touches[0].clientX;
-                const diffY = touchY - touchStartY;
-                const diffX = touchX - touchStartX;
-                
-                // 如果是垂直滑动，切换图片
-                if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > MOVE_THRESHOLD) {
-                    e.preventDefault();
-                    if (diffY > 0) {
-                        // 向下滑动，显示上一张
-                        showPrevImage();
-                    } else {
-                        // 向上滑动，显示下一张
-                        showNextImage();
-                    }
-                    touchStartY = 0;
-                }
-            }
-            
-            // 防抖函数
-            function debounce(func, delay = 100) {
-                let timeoutId;
-                return function(...args) {
-                    clearTimeout(timeoutId);
-                    timeoutId = setTimeout(() => func.apply(this, args), delay);
-                };
-            }
-            
-            // 模态框背景点击关闭
-            document.getElementById('imageModal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeModal();
-                }
-            });
-        </script>
-        """
+        return IMAGE_VIEWER_HTML
 
     def _generate_media_player_html(self):
         """生成媒体播放器HTML和JavaScript"""
-        return """
-        <div id="mediaPlayer" class="media-player-container">
-            <span class="media-close-btn" onclick="closeMediaPlayer()">&times;</span>
-            <div class="media-player">
-                <video id="videoPlayer" controls style="display: none;">
-                    Your browser does not support the video tag.
-                </video>
-                <audio id="audioPlayer" controls style="display: none;">
-                    Your browser does not support the audio element.
-                </audio>
-                <div class="media-controls">
-                    <div class="media-title-container">
-                        <div class="media-title" id="mediaTitle">Media Title</div>
-                    </div>
-                    <div class="media-control-buttons">
-                        <button id="playlistToggleBtn" class="playlist-toggle-btn">显示播放列表</button>
-                        <label class="continuous-play-label">
-                            <input type="checkbox" id="continuousPlayCheckbox" checked>
-                            连播
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="media-playlist" id="mediaPlaylist"></div>
-        </div>
-        <script>
-            let currentMediaType = '';
-            let currentMediaIndex = 0;
-            let mediaList = [];
-            let isPlaying = false;
-            let isMuted = false;
-            let isPlaylistVisible = false;
-            // 添加自动播放下一首的变量
-            let autoPlayNext = true;
-            
-            // 触摸事件变量
-            let mediaTouchStartY = 0;
-            let mediaTouchStartX = 0;
-
-            function viewVideos() {
-                openMediaPlayer('video', videoData);
-            }
-            function viewAudios() {
-                openMediaPlayer('audio', audioData);
-            }
-            function openMediaPlayer(type, mediaData) {
-                currentMediaType = type;
-                mediaList = mediaData;
-                currentMediaIndex = 0;
-                const player = document.getElementById('mediaPlayer');
-                player.classList.add('show');
-                document.body.style.overflow = 'hidden';
-                // 隐藏播放列表
-                const playlist = document.getElementById('mediaPlaylist');
-                playlist.classList.remove('show');
-                const toggleBtn = document.getElementById('playlistToggleBtn');
-                toggleBtn.textContent = '显示播放列表';
-                isPlaylistVisible = false;
-                // 设置播放器
-                const videoPlayer = document.getElementById('videoPlayer');
-                const audioPlayer = document.getElementById('audioPlayer');
-                if (type === 'video') {
-                    videoPlayer.style.display = 'block';
-                    audioPlayer.style.display = 'none';
-                    loadMedia(videoPlayer, 0);
-                } else {
-                    videoPlayer.style.display = 'none';
-                    audioPlayer.style.display = 'block';
-                    loadMedia(audioPlayer, 0);
-                }
-                setupMediaEvents();
-                
-                // 添加键盘和触摸事件监听
-                document.addEventListener('keydown', handleMediaKeydown);
-                player.addEventListener('touchstart', handleMediaTouchStart, { passive: false });
-                player.addEventListener('touchmove', handleMediaTouchMove, { passive: false });
-            }
-            function closeMediaPlayer() {
-                document.title = title;
-                const player = document.getElementById('mediaPlayer');
-                player.classList.remove('show');
-                document.body.style.overflow = 'auto';
-                const videoPlayer = document.getElementById('videoPlayer');
-                const audioPlayer = document.getElementById('audioPlayer');
-                videoPlayer.pause();
-                audioPlayer.pause();
-                // 移除结束事件监听
-                videoPlayer.onended = null;
-                audioPlayer.onended = null;
-                videoPlayer.onloadedmetadata = null;
-                videoPlayer.ontimeupdate = null;
-                audioPlayer.onloadedmetadata = null;
-                audioPlayer.ontimeupdate = null;
-                
-                // 移除键盘和触摸事件监听
-                document.removeEventListener('keydown', handleMediaKeydown);
-                player.removeEventListener('touchstart', handleMediaTouchStart);
-                player.removeEventListener('touchmove', handleMediaTouchMove);
-            }
-            // 修改：切换播放列表
-            function togglePlaylist() {
-                const playlist = document.getElementById('mediaPlaylist');
-                const toggleBtn = document.getElementById('playlistToggleBtn');
-                if (isPlaylistVisible) {
-                    playlist.classList.remove('show');
-                    toggleBtn.textContent = '显示播放列表';
-                } else {
-                    // 如果是第一次显示，先渲染
-                    if (playlist.children.length === 0) {
-                        renderPlaylist();
-                    }
-                    playlist.classList.add('show');
-                    toggleBtn.textContent = '隐藏播放列表';
-                }
-                isPlaylistVisible = !isPlaylistVisible;
-            }
-            // 在媒体播放器容器显示时，添加全局点击监听
-            document.addEventListener('click', function(event) {
-                const playlist = document.getElementById('mediaPlaylist');
-                const toggleBtn = document.getElementById('playlistToggleBtn');
-                const mediaPlayer = document.getElementById('mediaPlayer');
-                
-                // 只有当播放列表可见时才进行检查
-                if (isPlaylistVisible && mediaPlayer.classList.contains('show')) {
-                    // 检查点击的目标是否在播放列表内部或在切换按钮上
-                    const isClickInsidePlaylist = playlist && playlist.contains(event.target);
-                    const isClickOnToggleBtn = toggleBtn && toggleBtn.contains(event.target);
-                    
-                    // 如果点击在播放列表外部且不在切换按钮上，则隐藏
-                    if (!isClickInsidePlaylist && !isClickOnToggleBtn) {
-                        togglePlaylist(); // 复用已有的切换函数
-                    }
-                }
-            });
-            function renderPlaylist() {
-                const playlist = document.getElementById('mediaPlaylist');
-                playlist.innerHTML = '';
-                mediaList.forEach((media, index) => {
-                    const item = document.createElement('div');
-                    item.className = 'media-playlist-item';
-                    if (index === currentMediaIndex) {
-                        item.classList.add('active');
-                    }
-                    // 创建名称元素
-                    const nameSpan = document.createElement('span');
-                    nameSpan.textContent = media.name;
-                    nameSpan.style.flex = '1';
-                    nameSpan.style.overflow = 'hidden';
-                    nameSpan.style.textOverflow = 'ellipsis';
-                    nameSpan.style.whiteSpace = 'nowrap';
-
-                    // 创建大小元素
-                    const sizeSpan = document.createElement('span');
-                    sizeSpan.textContent = formatSize(media.size);
-                    sizeSpan.style.marginLeft = '10px';
-                    sizeSpan.style.flexShrink = '0';
-                    sizeSpan.style.color = 'var(--color-gray-subtext)';
-                    sizeSpan.style.fontSize = '0.9em';
-
-                    item.appendChild(nameSpan);
-                    item.appendChild(sizeSpan);
-
-                    item.onclick = () => {
-                        loadMedia(
-                            currentMediaType === 'video' 
-                                ? document.getElementById('videoPlayer') 
-                                : document.getElementById('audioPlayer'),
-                            index
-                        );
-                        // 点击后自动隐藏播放列表
-                        togglePlaylist();
-                    };
-                    playlist.appendChild(item);
-                });
-            }
-            function loadMedia(player, index) {
-                currentMediaIndex = index;
-                player.src = mediaList[index].url;
-                player.load();
-                document.getElementById('mediaTitle').textContent = mediaList[index].name;
-                document.title = mediaList[index].name;
-                renderPlaylist();
-                
-                // 设置结束事件监听，用于自动播放下一个
-                player.onended = function() {
-                    if (autoPlayNext && currentMediaIndex < mediaList.length - 1) {
-                        playNextMedia();
-                    }
-                };
-                
-                player.play().catch(e => {
-                    console.log('Autoplay prevented:', e);
-                });
-            }
-            function setupMediaEvents() {
-                const videoPlayer = document.getElementById('videoPlayer');
-                const audioPlayer = document.getElementById('audioPlayer');
-                const player = currentMediaType === 'video' ? videoPlayer : audioPlayer;
-                document.getElementById('playlistToggleBtn').onclick = togglePlaylist;
-                
-                // 设置连播复选框事件
-                const continuousPlayCheckbox = document.getElementById('continuousPlayCheckbox');
-                continuousPlayCheckbox.checked = autoPlayNext;
-                continuousPlayCheckbox.onchange = function() {
-                    autoPlayNext = this.checked;
-                };
-                
-                // 确保为当前播放器设置结束事件
-                player.onended = function() {
-                    if (autoPlayNext && currentMediaIndex < mediaList.length - 1) {
-                        playNextMedia();
-                    }
-                };
-            }
-            
-            function playNextMedia() {
-                if (currentMediaIndex < mediaList.length - 1) {
-                    loadMedia(
-                        currentMediaType === 'video' 
-                            ? document.getElementById('videoPlayer') 
-                            : document.getElementById('audioPlayer'),
-                        currentMediaIndex + 1
-                    );
-                }
-            }
-            
-            function playPrevMedia() {
-                if (currentMediaIndex > 0) {
-                    loadMedia(
-                        currentMediaType === 'video' 
-                            ? document.getElementById('videoPlayer') 
-                            : document.getElementById('audioPlayer'),
-                        currentMediaIndex - 1
-                    );
-                }
-            }
-            
-            function handleMediaKeydown(e) {
-                if (e.key === 'ArrowDown') {
-                    playNextMedia();
-                    e.preventDefault();
-                } else if (e.key === 'ArrowUp') {
-                    playPrevMedia();
-                    e.preventDefault();
-                } else if (e.key === 'Escape') {
-                    closeMediaPlayer();
-                }
-            }
-            
-            function handleMediaTouchStart(e) {
-                mediaTouchStartY = e.touches[0].clientY;
-                mediaTouchStartX = e.touches[0].clientX;
-            }
-            
-            function handleMediaTouchMove(e) {
-                if (isPlaylistVisible) return;
-                if (!mediaTouchStartY) return;
-                
-                const touchY = e.touches[0].clientY;
-                const touchX = e.touches[0].clientX;
-                const diffY = touchY - mediaTouchStartY;
-                const diffX = touchX - mediaTouchStartX;
-                
-                // 如果是垂直滑动，切换媒体
-                if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > MOVE_THRESHOLD) {
-                    e.preventDefault();
-                    if (diffY > 0) {
-                        // 向下滑动，显示上一个
-                        playPrevMedia();
-                    } else {
-                        // 向上滑动，显示下一个
-                        playNextMedia();
-                    }
-                    mediaTouchStartY = 0;
-                }
-            }
-            
-            function formatTime(seconds) {
-                if (isNaN(seconds)) return '0:00';
-                const minutes = Math.floor(seconds / 60);
-                seconds = Math.floor(seconds % 60);
-                return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-            }
-            function formatSize(bytes) {
-                if (bytes === 0) return '0 B';
-                const k = 1024;
-                const sizes = ['B', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-        </script>
-        """
+        return MEDIA_PLAYER_HTML
 
     def _generate_text_viewer_html(self):
         """生成文本查看器HTML和JavaScript"""
-        return """
-        <div id="textViewer" class="text-viewer-container">
-            <span class="text-close-btn" onclick="closeTextViewer()">&times;</span>
-            <div class="text-viewer-header">
-                <h2 id="textTitle">文本查看器</h2>
-                <div class="text-viewer-options">
-                    <button id="textListToggle" class="text-viewer-btn" onclick="toggleTextList()">显示列表</button>
-                    <button id="textWrapToggle" class="text-viewer-btn" onclick="toggleTextWrap()">换行</button>
-                    <!-- <button class="text-viewer-btn" onclick="copyTextContent()">复制</button> -->
-                </div>
-            </div>
-            <div class="text-viewer-content-container">
-                <div class="text-viewer-content">
-                    <pre><code id="textContent" class="hljs"></code></pre>
-                </div>
-            </div>
-            <!-- 文本文件列表 -->
-            <div class="text-playlist" id="textPlaylist"></div>
-        </div>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-        <script>
-            let currentTextIndex = 0;
-            let textList = [];
-            let isTextWrapEnabled = true;
-            let isTextListVisible = false;
+        return TEXT_VIEWER_HTML
 
-            function viewTexts() {
-                openTextViewer(textData);
-            }
-
-            function openTextViewer(textData) {
-                textList = textData;
-                currentTextIndex = 0;
-                const viewer = document.getElementById('textViewer');
-                viewer.classList.add('show');
-                document.body.style.overflow = 'hidden';
-
-                // 加载第一个文本文件
-                loadText(0);
-
-                // 添加键盘事件监听
-                document.addEventListener('keydown', handleTextKeydown);
-                
-                // 添加全局点击监听，用于关闭列表
-                document.addEventListener('click', handleGlobalClick);
-            }
-
-            function closeTextViewer() {
-                document.title = title;
-                const viewer = document.getElementById('textViewer');
-                viewer.classList.remove('show');
-                document.body.style.overflow = 'auto';
-
-                // 移除键盘事件监听
-                document.removeEventListener('keydown', handleTextKeydown);
-                document.removeEventListener('click', handleGlobalClick);
-                
-                // 隐藏列表
-                hideTextList();
-            }
-
-            function loadText(index) {
-                if (index < 0 || index >= textList.length) return;
-
-                currentTextIndex = index;
-                const textFile = textList[index];
-
-                // 更新标题
-                document.title = textFile.name;
-                document.getElementById('textTitle').textContent = textFile.name;
-
-                // 显示加载中
-                document.getElementById('textContent').textContent = '加载中...';
-
-                // 获取文本内容
-                fetch(textFile.url)
-                    .then(response => {
-                        if (!response.ok) throw new Error('网络响应不正常');
-                        return response.text();
-                    })
-                    .then(text => {
-                        // 设置文本内容并高亮
-                        const codeElement = document.getElementById('textContent');
-                        codeElement.textContent = text;
-
-                        // 应用高亮
-                        hljs.highlightElement(codeElement);
-
-                        // 应用换行设置
-                        applyTextWrap();
-                    })
-                    .catch(error => {
-                        document.getElementById('textContent').textContent = '加载失败: ' + error.message;
-                    });
-            }
-
-            function showNextText() {
-                if (currentTextIndex < textList.length - 1) {
-                    loadText(currentTextIndex + 1);
-                }
-            }
-
-            function showPrevText() {
-                if (currentTextIndex > 0) {
-                    loadText(currentTextIndex - 1);
-                }
-            }
-
-            function toggleTextWrap() {
-                isTextWrapEnabled = !isTextWrapEnabled;
-                applyTextWrap();
-
-                // 更新按钮文本
-                // document.getElementById('textWrapToggle').textContent =
-                //    isTextWrapEnabled ? '禁用换行' : '自动换行';
-            }
-
-            function toggleTextList() {
-                const playlist = document.getElementById('textPlaylist');
-                const toggleBtn = document.getElementById('textListToggle');
-                
-                if (isTextListVisible) {
-                    hideTextList();
-                    toggleBtn.textContent = '显示列表';
-                } else {
-                    renderTextList();
-                    playlist.classList.add('show');
-                    toggleBtn.textContent = '隐藏列表';
-                }
-                
-                isTextListVisible = !isTextListVisible;
-            }
-            
-            function hideTextList() {
-                const playlist = document.getElementById('textPlaylist');
-                const toggleBtn = document.getElementById('textListToggle');
-                
-                playlist.classList.remove('show');
-                toggleBtn.textContent = '显示列表';
-                isTextListVisible = false;
-            }
-
-            function renderTextList() {
-                const playlist = document.getElementById('textPlaylist');
-                playlist.innerHTML = '';
-                
-                textList.forEach((textFile, index) => {
-                    const item = document.createElement('div');
-                    item.className = 'text-playlist-item';
-                    if (index === currentTextIndex) {
-                        item.classList.add('active');
-                    }
-                    
-                    // 创建名称元素
-                    const nameSpan = document.createElement('span');
-                    nameSpan.textContent = textFile.name;
-                    nameSpan.style.flex = '1';
-                    nameSpan.style.overflow = 'hidden';
-                    nameSpan.style.textOverflow = 'ellipsis';
-                    nameSpan.style.whiteSpace = 'nowrap';
-
-                    // 创建大小元素
-                    const sizeSpan = document.createElement('span');
-                    sizeSpan.textContent = formatSize(textFile.size);
-                    sizeSpan.style.marginLeft = '10px';
-                    sizeSpan.style.flexShrink = '0';
-                    sizeSpan.style.color = 'var(--color-gray-subtext)';
-                    sizeSpan.style.fontSize = '0.9em';
-
-                    item.appendChild(nameSpan);
-                    item.appendChild(sizeSpan);
-
-                    item.onclick = () => {
-                        loadText(index);
-                        // 点击后自动隐藏列表
-                        hideTextList();
-                    };
-                    playlist.appendChild(item);
-                });
-            }
-
-            function applyTextWrap() {
-                const codeElement = document.getElementById('textContent');
-                if (isTextWrapEnabled) {
-                    codeElement.style.whiteSpace = 'pre-wrap';
-                    codeElement.style.wordBreak = 'break-word';
-                } else {
-                    codeElement.style.whiteSpace = 'pre';
-                    codeElement.style.wordBreak = 'normal';
-                }
-            }
-
-            function copyTextContent() {
-                const textContent = document.getElementById('textContent').textContent;
-                navigator.clipboard.writeText(textContent)
-                    .then(() => {
-                        alert('内容已复制到剪贴板');
-                    })
-                    .catch(err => {
-                        console.error('复制失败:', err);
-                    });
-            }
-
-            function handleTextKeydown(e) {
-                if (e.key === 'ArrowRight') {
-                    showNextText();
-                    e.preventDefault();
-                } else if (e.key === 'ArrowLeft') {
-                    showPrevText();
-                    e.preventDefault();
-                } else if (e.key === 'Escape') {
-                    closeTextViewer();
-                }
-            }
-            
-            function handleGlobalClick(e) {
-                const playlist = document.getElementById('textPlaylist');
-                const toggleBtn = document.getElementById('textListToggle');
-                
-                // 只有当列表可见时才进行检查
-                if (isTextListVisible) {
-                    // 检查点击的目标是否在列表内部或在切换按钮上
-                    const isClickInsidePlaylist = playlist && playlist.contains(e.target);
-                    const isClickOnToggleBtn = toggleBtn && toggleBtn.contains(e.target);
-                    
-                    // 如果点击在列表外部且不在切换按钮上，则隐藏列表
-                    if (!isClickInsidePlaylist && !isClickOnToggleBtn) {
-                        hideTextList();
-                    }
-                }
-            }
-
-            function formatSize(bytes) {
-                if (bytes === 0) return '0 B';
-                const k = 1024;
-                const sizes = ['B', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-
-            // 添加Edge特定的滚动事件处理
-            if (navigator.userAgent.includes('Edge')) {
-                document.addEventListener('DOMContentLoaded', function() {
-                    const textContent = document.getElementById('textContent');
-                    if (textContent) {
-                        // 确保代码块可以滚动
-                        textContent.style.overflow = 'auto';
-                        textContent.style.maxHeight = 'none';
-                        
-                        // 添加触摸事件支持
-                        textContent.addEventListener('touchstart', function(e) {
-                            this.startY = e.touches[0].clientY;
-                        }, { passive: true });
-                        
-                        textContent.addEventListener('touchmove', function(e) {
-                            if (!this.startY) return;
-                            
-                            const touchY = e.touches[0].clientY;
-                            const diffY = this.startY - touchY;
-                            
-                            if (Math.abs(diffY) > 10) {
-                                this.scrollTop += diffY;
-                                this.startY = touchY;
-                                e.preventDefault();
-                            }
-                        }, { passive: false });
-                    }
-                });
-            }
-        </script>
-        """
+    def _generate_js_scripts(self):
+        """生成JavaScript脚本"""
+        return JS_SCRIPTS
 
     def _send_html_response(self, html_content):
         """发送HTML响应"""

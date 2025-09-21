@@ -3,6 +3,8 @@
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
+[English](/README-en.md)
+
 **`share-cli` 是一个极致简单的单文件 HTTP 服务器。** 只需一个 Python 脚本，即可在局域网内快速、安全地共享您的文件夹。
 
 ```bash
@@ -111,16 +113,16 @@ pip install --user share-cli
 如果你想手动下载 wheel 文件进行安装：
 
 1.  访问项目的 [Gitee Release 页面](https://gitee.com/jackiehankk/share/releases) 或 [GitHub Releases 页面](https://github.com/jackiehank/share/releases)。
-2.  在最新的版本（如 `v0.4.5`）下，找到 **Assets** 部分。
-3.  下载文件 `share_cli-0.4.5-py3-none-any.whl`。
+2.  在最新的版本（如 `v0.4.6`）下，找到 **Assets** 部分。
+3.  下载文件 `share_cli-0.4.6-py3-none-any.whl`。
 4.  使用 `pipx` 或 `pip` 安装下载的文件：
 
 ```bash
 # 使用 pipx
-pipx install ./share_cli-0.4.5-py3-none-any.whl
+pipx install ./share_cli-0.4.6-py3-none-any.whl
 
 # 或使用 pip
-pip install --user ./share_cli-0.4.5-py3-none-any.whl
+pip install --user ./share_cli-0.4.6-py3-none-any.whl
 ```
 
 #### 2: 开始使用！
