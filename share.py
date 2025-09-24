@@ -76,7 +76,7 @@ HTTP文件服务器 - 支持分页浏览、图片查看和媒体播放功能
 
 """
 
-__version__ = "0.4.6"
+__version__ = "0.4.7"
 __author__ = "Jackie Hank"
 __license__ = "MIT"
 
@@ -97,9 +97,16 @@ from collections import OrderedDict
 from html import escape
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import parse_qs, quote, unquote, urlparse
+import logging
+from logging.handlers import RotatingFileHandler
+import platform
+import os
 
 
 # 常量定义
+# 日志配置常量
+LOG_FILE_NAME = "share.log"
+
 # SSL 配置
 SSL_DIR = os.path.expanduser("~/.config/share/ssl")
 CERT_FILE = os.path.join(SSL_DIR, "certificate.crt")
@@ -2204,9 +2211,19 @@ class LRUCache:
 class FileServerHandler(SimpleHTTPRequestHandler):
     """自定义HTTP请求处理器，支持文件浏览和图片查看功能"""
 
+    # 添加一个类级别的日志记录器
+    logger = logging.getLogger("FileServerHandler")
+
     # 使用类变量共享缓存实例
     cache = LRUCache(capacity=CACHE_CAPACITY, timeout=CACHE_TIMEOUT)
     password = None  # 初始密码为None
+
+    def log_message(self, format, *args):
+        # 将访问日志写入文件日志（INFO 级别）
+        self.logger.info(
+            "%s - - [%s] %s"
+            % (self.client_address[0], self.log_date_time_string(), format % args)
+        )
 
     def check_authentication(self):
         """检查HTTP基本认证"""
@@ -2809,19 +2826,17 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             super().do_GET()
         except (BrokenPipeError, ConnectionResetError):
             # 客户端提前关闭连接
-            print(
-                f"The client {self.client_address} terminated the connection prematurely."
-            )
+            self.logger.warning(f"客户端 {self.client_address} 提前关闭了连接.")
             return
         except Exception as e:
             # 其他异常，记录日志但不中断服务器
-            print(f"处理请求时发生异常: {e}")
+            self.logger.error(f"处理请求时发生异常: {e}")
             try:
                 self.send_error(500, f"Server error: {str(e)}")
             except (BrokenPipeError, ConnectionResetError):
                 # 即使在发送错误响应时客户端也断开了连接
-                print(
-                    f"The client {self.client_address} terminated the connection prematurely during error response."
+                self.logger.warning(
+                    f"客户端 {self.client_address} 在发送错误响应时提前关闭了连接."
                 )
                 return
 
@@ -2847,7 +2862,7 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                             self.wfile.write(chunk)
                             self.wfile.flush()  # 强制刷新 SSL 缓冲区
                 except (BrokenPipeError, ConnectionResetError):
-                    print("The client terminated the connection prematurely.")
+                    self.logger.warning(f"客户端 {self.client_address} 提前关闭了连接.")
                     return
                 return
 
@@ -2882,12 +2897,14 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                         self.wfile.flush()  # 🔥 关键修复
                         remaining -= len(data)
             except (BrokenPipeError, ConnectionResetError):
+                self.logger.warning(f"客户端 {self.client_address} 提前关闭了连接.")
                 return
             except Exception as e:
-                self.log_error(f"Error sending file: {e}")
+                self.logger.error(f"发送文件时出错: {e}")
                 return
 
         except Exception as e:
+            self.logger.error(f"处理视频请求时出错: {e}")
             self.send_error(500, f"Video request failed: {e}")
 
     def _parse_range_header(self, range_header, file_size):
@@ -3046,9 +3063,11 @@ class FileServerHandler(SimpleHTTPRequestHandler):
                     # 确保文件完整写入
                     f.flush()
             except OSError as e:
+                self.logger.error(f"保存文件时出错: {e}")
                 self.send_error(500, f"Failed to save file: {str(e)}")
                 return
             except Exception as e:
+                self.logger.error(f"Unexpected error during file save: {e}")
                 self.send_error(500, f"Unexpected error during file save: {str(e)}")
                 return
 
@@ -3064,14 +3083,94 @@ class FileServerHandler(SimpleHTTPRequestHandler):
             self.cache.invalidate(target_dir)
 
         except UnicodeDecodeError:
+            self.logger.error(f"请求头中存在无效编码")
             self.send_error(400, "Invalid encoding in request headers")
             return
         except KeyError:
+            self.logger.error(f"请求中缺少必要参数")
             self.send_error(400, "Missing required parameter")
             return
         except Exception as e:
+            self.logger.error(f"处理请求时发生异常: {e}")
             self.send_error(500, f"Unexpected error: {str(e)}")
             return
+
+
+def get_log_directory():
+    """根据系统平台获取推荐的日志目录"""
+    system = platform.system().lower()
+
+    if system == "windows":
+        # Windows: 使用 %APPDATA% 目录
+        base_dir = os.environ.get("APPDATA", os.path.expanduser("~"))
+        log_dir = os.path.join(base_dir, "Share", "Logs")
+    elif system == "darwin":  # macOS
+        # macOS: 使用 ~/Library/Logs 目录
+        log_dir = os.path.expanduser("~/Library/Logs/Share")
+    else:  # Linux 和其他 Unix 系统
+        # 首先尝试用户目录
+        base_dir = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
+        log_dir = os.path.join(base_dir, "share", "logs")
+
+        # 如果用户目录不可写，尝试当前工作目录
+        try:
+            os.makedirs(log_dir, exist_ok=True)
+            # 测试是否可写
+            test_file = os.path.join(log_dir, ".write_test")
+            with open(test_file, "w") as f:
+                f.write("test")
+            os.remove(test_file)
+        except (PermissionError, OSError):
+            # 回退到当前工作目录下的 logs 文件夹
+            log_dir = os.path.join(os.getcwd(), "logs")
+
+    # 创建日志目录
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+        return log_dir
+    except PermissionError:
+        # 如果所有目录都不可写，使用临时目录
+        import tempfile
+
+        log_dir = os.path.join(tempfile.gettempdir(), "share_logs")
+        os.makedirs(log_dir, exist_ok=True)
+        return log_dir
+
+
+def setup_logging():
+    try:
+        log_dir = get_log_directory()
+        log_file = os.path.join(log_dir, LOG_FILE_NAME)
+
+        root_logger = logging.getLogger()
+        root_logger.handlers.clear()
+        root_logger.setLevel(logging.INFO)
+
+        file_handler = RotatingFileHandler(
+            log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8"
+        )
+        formatter = logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        file_handler.setFormatter(formatter)
+        root_logger.addHandler(file_handler)
+
+        return log_file
+
+    except Exception as e:
+        print(f"无法设置文件日志: {e}，将使用控制台输出", file=sys.stderr)
+
+        # 清理并回退到控制台
+        root_logger = logging.getLogger()
+        root_logger.handlers.clear()
+        root_logger.setLevel(logging.NOTSET)
+
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        return "console_only"
 
 
 def get_local_ip():
@@ -3221,16 +3320,34 @@ def serve_folder(
 
         if password:
             print("访问密码已设置")
+            logging.info("访问密码已设置")
+
         print(f"正在共享文件夹: {os.getcwd()}")
+        logging.info(f"正在共享文件夹: {os.getcwd()}")
+
         print(f"本地访问: {scheme}://localhost:{port}")
+        logging.info(f"本地访问: {scheme}://localhost:{port}")
+
         print(f"局域网访问: {scheme}://{local_ip}:{port}")
+        logging.info(f"局域网访问: {scheme}://{local_ip}:{port}")
+
         if scheme == "https":
             print("使用自签名证书，浏览器将显示安全警告，请点击“高级” → “继续访问”")
+            logging.info("使用自签名证书，浏览器将显示安全警告")
+
         print(f"缓存统计: {scheme}://localhost:{port}/cache-stats")
+        logging.info(f"缓存统计: {scheme}://localhost:{port}/cache-stats")
+
         print(f"清空缓存: {scheme}://localhost:{port}/cache-clear")
+        logging.info(f"清空缓存: {scheme}://localhost:{port}/cache-clear")
+
         print(
             f"配置缓存: {scheme}://localhost:{port}/cache-config?timeout={CACHE_TIMEOUT}&capacity={CACHE_CAPACITY}"
         )
+        logging.info(
+            f"配置缓存: {scheme}://localhost:{port}/cache-config?timeout={CACHE_TIMEOUT}&capacity={CACHE_CAPACITY}"
+        )
+        
         print("按 Ctrl+C 停止服务器")
 
         # 启动服务器并保持运行e)
@@ -3238,14 +3355,21 @@ def serve_folder(
 
     except (ValueError, PermissionError) as e:
         print(f"错误: {e}")
+        logging.error(f"错误: {e}")
     except KeyboardInterrupt:
         print("\n服务器已停止")
+        logging.info("服务器已停止")
     except Exception as e:
         print(f"服务器错误: {e}")
+        logging.error(f"服务器错误: {e}")
 
 
 def main():
     """主函数，解析命令行参数并启动服务器"""
+    # 设置日志
+    log_file = setup_logging()
+    logging.info("Share 文件服务器启动")
+
     parser = argparse.ArgumentParser(
         description="启动一个简单的HTTP服务器提供本地文件夹服务"
     )

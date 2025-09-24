@@ -113,16 +113,16 @@ pip install --user share-cli
 If you want to manually download the wheel file for installation:
 
 1.  Visit the project's [Gitee Release page](https://gitee.com/jackiehankk/share/releases) or [GitHub Releases page](https://github.com/jackiehank/share/releases).
-2.  Under the latest release (e.g., `v0.4.6`), find the **Assets** section.
-3.  Download the file `share_cli-0.4.6-py3-none-any.whl`.
+2.  Under the latest release (e.g., `v0.4.7`), find the **Assets** section.
+3.  Download the file `share_cli-0.4.7-py3-none-any.whl`.
 4.  Install the downloaded file using `pipx` or `pip`:
 
 ```bash
 # Using pipx
-pipx install ./share_cli-0.4.6-py3-none-any.whl
+pipx install ./share_cli-0.4.7-py3-none-any.whl
 
 # Or using pip
-pip install --user ./share_cli-0.4.6-py3-none-any.whl
+pip install --user ./share_cli-0.4.7-py3-none-any.whl
 ```
 
 #### 2: Start Using It!
