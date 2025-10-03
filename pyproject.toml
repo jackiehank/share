@@ -16,7 +16,11 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
-dev = ["pytest>=8.4.2", "requests>=2.32.5", "ruff>=0.12.12"]
+dev = [
+    "pytest>=8.4.2; python_version >= '3.9'",
+    "requests>=2.32.5; python_version >= '3.9'",
+    "ruff>=0.12.12",
+]
 
 [project.scripts]
 share = "share:main"
